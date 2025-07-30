@@ -1,149 +1,324 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Form, Button, Alert, Table } from 'react-bootstrap';
-import { FaPlus, FaWallet } from 'react-icons/fa';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import { Container, Alert, Card, ListGroup, Form, Button, Modal } from 'react-bootstrap';
+import { toast } from 'react-toastify';
+import { AuthContext } from '../App';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 const API_URL = 'http://localhost:5000/api';
 
-function CharityDashboard() {
-  const [story, setStory] = useState({ title: '', content: '', image_url: '', beneficiary_name: '', beneficiary_age: '' });
+const CharityDashboard = () => {
+  const { auth } = useContext(AuthContext);
+  const [status, setStatus] = useState(null);
   const [donations, setDonations] = useState([]);
-  const [totalCredits, setTotalCredits] = useState(0);
-  const [message, setMessage] = useState('');
-  const [status, setStatus] = useState({ approved: false, rejected: false });
+  const [stories, setStories] = useState([]);
+  const [error, setError] = useState('');
+  const [storyForm, setStoryForm] = useState({ title: '', content: '', photo_url: '' });
+  const [editStory, setEditStory] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    // Check approval/rejection status
-    axios.get(`${API_URL}/charity/status`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setStatus({ approved: res.data.approved, rejected: res.data.rejected }))
-      .catch(err => setMessage(err.response.data.message));
-    // Fetch donation history and total credits
-    axios.get(`${API_URL}/charity/donations`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => {
-        setDonations(res.data.donations);
-        setTotalCredits(res.data.total_credits);
-      })
-      .catch(err => setMessage(err.response.data.message));
-  }, []);
+    const fetchData = async () => {
+      setError('');
+      if (!auth.charityId) {
+        setError('Charity ID not found. Please log in again.');
+        toast.dismiss();
+        toast.error('Charity ID not found. Please log in again.', { position: 'top-right', toastId: 'charity-id-error', autoClose: 5000 });
+        return;
+      }
+      try {
+        const [statusResponse, donationsResponse, storiesResponse] = await Promise.all([
+          axios.get(`${API_URL}/charity/status`, {
+            headers: { Authorization: `Bearer ${auth.token}` }
+          }),
+          axios.get(`${API_URL}/charity/donations`, {
+            headers: { Authorization: `Bearer ${auth.token}` }
+          }),
+          axios.get(`${API_URL}/stories?charity_id=${auth.charityId}`, {
+            headers: { Authorization: `Bearer ${auth.token}` }
+          }).catch(err => {
+            if (err.response?.status === 404) {
+              return { data: [] };
+            }
+            throw err;
+          })
+        ]);
+        setStatus(statusResponse.data);
+        setDonations(donationsResponse.data);
+        setStories(storiesResponse.data);
+      } catch (err) {
+        const message = err.response?.data?.message || 'Failed to fetch charity data';
+        setError(message);
+        toast.dismiss();
+        toast.error(message, { position: 'top-right', toastId: 'charity-error', autoClose: 5000 });
+      }
+    };
+    if (auth.token && auth.role === 'charity') {
+      fetchData();
+    } else {
+      setError('Not authorized');
+      toast.dismiss();
+      toast.error('Not authorized', { position: 'top-right', toastId: 'auth-error', autoClose: 5000 });
+    }
+  }, [auth.token, auth.role, auth.charityId]);
 
-  const handleAddStory = () => {
-    const token = localStorage.getItem('token');
-    axios.post(`${API_URL}/stories`, story, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => {
-        setMessage(res.data.message);
-        setStory({ title: '', content: '', image_url: '', beneficiary_name: '', beneficiary_age: '' });
-      })
-      .catch(err => setMessage(err.response.data.message));
+  const handleStoryChange = (e) => {
+    const { name, value } = e.target;
+    setStoryForm({ ...storyForm, [name]: value });
   };
 
-  if (status.rejected) {
-    return (
-      <div className="container mt-5">
-        <Alert variant="danger">
-          We are sorry, your charity application was not approved. For further details or to appeal this decision, please contact our team at support@tuinuewasichana.org.
-        </Alert>
-      </div>
-    );
+  const handleEditStoryChange = (e) => {
+    const { name, value } = e.target;
+    setEditStory({ ...editStory, [name]: value });
+  };
+
+  const handleStorySubmit = async (e) => {
+    e.preventDefault();
+    if (!storyForm.title.trim() || !storyForm.content.trim()) {
+      setError('Title and content are required');
+      toast.dismiss();
+      toast.error('Title and content are required', { position: 'top-right', toastId: 'story-error', autoClose: 5000 });
+      return;
+    }
+    try {
+      const response = await axios.post(
+        `${API_URL}/stories`,
+        storyForm,
+        { headers: { Authorization: `Bearer ${auth.token}` } }
+      );
+      setStories([...stories, response.data.story]);
+      setStoryForm({ title: '', content: '', photo_url: '' });
+      toast.dismiss();
+      toast.success('Story created successfully', { position: 'top-right', toastId: 'story-success', autoClose: 5000 });
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to create story';
+      setError(message);
+      toast.dismiss();
+      toast.error(message, { position: 'top-right', toastId: 'story-error', autoClose: 5000 });
+    }
+  };
+
+  const handleEditStorySubmit = async (e) => {
+    e.preventDefault();
+    if (!editStory.title.trim() || !editStory.content.trim()) {
+      setError('Title and content are required');
+      toast.dismiss();
+      toast.error('Title and content are required', { position: 'top-right', toastId: 'edit-story-error', autoClose: 5000 });
+      return;
+    }
+    try {
+      const response = await axios.put(
+        `${API_URL}/stories/${editStory.id}`,
+        editStory,
+        { headers: { Authorization: `Bearer ${auth.token}` } }
+      );
+      setStories(stories.map(s => s.id === editStory.id ? response.data.story : s));
+      setEditStory(null);
+      setShowEditModal(false);
+      toast.dismiss();
+      toast.success('Story updated successfully', { position: 'top-right', toastId: 'edit-story-success', autoClose: 5000 });
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to update story';
+      setError(message);
+      toast.dismiss();
+      toast.error(message, { position: 'top-right', toastId: 'edit-story-error', autoClose: 5000 });
+    }
+  };
+
+  const openEditModal = (story) => {
+    setEditStory(story);
+    setShowEditModal(true);
+  };
+
+  if (error) {
+    return <Container className="mt-4"><Alert variant="danger">{error}</Alert></Container>;
   }
 
-  if (!status.approved) {
-    return (
-      <div className="container mt-5">
-        <Alert variant="warning">
-          Your charity application is pending approval. You will be notified via email once approved.
-        </Alert>
-      </div>
-    );
+  if (!status) {
+    return <Container className="mt-4"><p>Loading...</p></Container>;
   }
 
   return (
-    <div>
-      <h1 className="text-primary mb-4">Charity Dashboard</h1>
-      {message && <Alert variant={message.includes('Error') ? 'danger' : 'success'}>{message}</Alert>}
+    <Container className="mt-4">
+      <h1>Charity Dashboard</h1>
       <Card className="mb-4">
+        <Card.Header>Charity Status</Card.Header>
         <Card.Body>
-          <Card.Title><FaPlus className="me-2" /> Add Beneficiary Story</Card.Title>
-          <Form.Group className="mb-3">
-            <Form.Label>Story Title</Form.Label>
-            <Form.Control
-              type="text"
-              value={story.title}
-              onChange={e => setStory({ ...story, title: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Beneficiary Name</Form.Label>
-            <Form.Control
-              type="text"
-              value={story.beneficiary_name}
-              onChange={e => setStory({ ...story, beneficiary_name: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Beneficiary Age</Form.Label>
-            <Form.Control
-              type="number"
-              value={story.beneficiary_age}
-              onChange={e => setStory({ ...story, beneficiary_age: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Story Content</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={4}
-              value={story.content}
-              onChange={e => setStory({ ...story, content: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Image URL (e.g., hosted image link)</Form.Label>
-            <Form.Control
-              type="url"
-              value={story.image_url}
-              onChange={e => setStory({ ...story, image_url: e.target.value })}
-              placeholder="https://example.com/image.jpg"
-            />
-            <Form.Text>Upload an image and provide its URL (e.g., via Imgur or similar).</Form.Text>
-          </Form.Group>
-          <Button onClick={handleAddStory} variant="primary">Add Story</Button>
+          <Card.Text><strong>Name:</strong> {status.name}</Card.Text>
+          <Card.Text>
+            <strong>Status:</strong>{' '}
+            {status.approved ? 'Approved' : status.rejected ? 'Rejected' : 'Pending'}
+          </Card.Text>
+          {!status.approved && !status.rejected && (
+            <Alert variant="warning">
+              Your charity application is pending approval. Please wait for admin review.
+            </Alert>
+          )}
+          {status.rejected && (
+            <Alert variant="danger">
+              Your charity application was rejected. Please contact support@tuinuewasichana.org.
+            </Alert>
+          )}
         </Card.Body>
       </Card>
+
       <Card className="mb-4">
+        <Card.Header>Create Beneficiary Story</Card.Header>
         <Card.Body>
-          <Card.Title><FaWallet className="me-2" /> Total Credits: {totalCredits}</Card.Title>
+          {status.approved ? (
+            <Form onSubmit={handleStorySubmit}>
+              <Form.Group className="mb-3">
+                <Form.Label>Title</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="title"
+                  value={storyForm.title}
+                  onChange={handleStoryChange}
+                  placeholder="Enter story title"
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Content</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={5}
+                  name="content"
+                  value={storyForm.content}
+                  onChange={handleStoryChange}
+                  placeholder="Enter story content"
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Photo URL</Form.Label>
+                <Form.Control
+                  type="url"
+                  name="photo_url"
+                  value={storyForm.photo_url}
+                  onChange={handleStoryChange}
+                  placeholder="https://example.com/photo.jpg"
+                />
+              </Form.Group>
+              <Button variant="primary" type="submit">
+                Create Story
+              </Button>
+            </Form>
+          ) : (
+            <Alert variant="info">
+              Story creation is available only for approved charities.
+            </Alert>
+          )}
         </Card.Body>
       </Card>
-      <Card>
+
+      <Card className="mb-4">
+        <Card.Header>Beneficiary Stories</Card.Header>
         <Card.Body>
-          <Card.Title>Donation History</Card.Title>
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th>Donor ID</th>
-                <th>Amount</th>
-                <th>Anonymous</th>
-                <th>Recurring</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {donations.map(d => (
-                <tr key={d.id}>
-                  <td>{d.is_anonymous ? 'Anonymous' : d.donor_id}</td>
-                  <td>{d.amount}</td>
-                  <td>{d.is_anonymous ? 'Yes' : 'No'}</td>
-                  <td>{d.is_recurring ? 'Yes' : 'No'}</td>
-                  <td>{new Date(d.date).toLocaleDateString()}</td>
-                </tr>
+          {stories.length === 0 ? (
+            <p>No stories created yet.</p>
+          ) : (
+            <ListGroup>
+              {stories.map(story => (
+                <ListGroup.Item key={story.id}>
+                  <h5>{story.title}</h5>
+                  <p>{story.content}</p>
+                  {story.photo_url && (
+                    <img
+                      src={story.photo_url}
+                      alt={story.title}
+                      style={{ maxWidth: '200px', marginTop: '10px' }}
+                    />
+                  )}
+                  <p><small>Posted on {new Date(story.date).toLocaleDateString()}</small></p>
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => openEditModal(story)}
+                  >
+                    Edit
+                  </Button>
+                </ListGroup.Item>
               ))}
-            </tbody>
-          </Table>
+            </ListGroup>
+          )}
         </Card.Body>
       </Card>
-    </div>
+
+      <Card>
+        <Card.Header>Donations Received</Card.Header>
+        <Card.Body>
+          {donations.length === 0 ? (
+            <p>No donations received yet.</p>
+          ) : (
+            <ListGroup>
+              {donations.map(donation => (
+                <ListGroup.Item key={donation.id}>
+                  {donation.donor_username} donated {donation.amount} credits on{' '}
+                  {new Date(donation.date).toLocaleDateString()}{' '}
+                  {donation.is_anonymous && '(Anonymous)'}
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
+        </Card.Body>
+      </Card>
+
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Story</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {editStory && (
+            <Form onSubmit={handleEditStorySubmit}>
+              <Form.Group className="mb-3">
+                <Form.Label>Title</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="title"
+                  value={editStory.title}
+                  onChange={handleEditStoryChange}
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Content</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={5}
+                  name="content"
+                  value={editStory.content}
+                  onChange={handleEditStoryChange}
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Photo URL</Form.Label>
+                <Form.Control
+                  type="url"
+                  name="photo_url"
+                  value={editStory.photo_url || ''}
+                  onChange={handleEditStoryChange}
+                  placeholder="https://example.com/photo.jpg"
+                />
+              </Form.Group>
+              <Button variant="primary" type="submit">
+                Save Changes
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setShowEditModal(false)}
+                className="ms-2"
+              >
+                Cancel
+              </Button>
+            </Form>
+          )}
+        </Modal.Body>
+      </Modal>
+    </Container>
   );
-}
+};
 
 export default CharityDashboard;

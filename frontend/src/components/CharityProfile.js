@@ -1,102 +1,85 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, Form, Button, Alert } from 'react-bootstrap';
-import { FaDonate } from 'react-icons/fa';
 import axios from 'axios';
+import { Container, Card, ListGroup } from 'react-bootstrap';
+import { useParams } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const API_URL = 'http://localhost:5000/api';
 
-function CharityProfile() {
+const CharityProfile = () => {
   const { id } = useParams();
   const [charity, setCharity] = useState(null);
-  const [stories, setStories] = useState([]);
-  const [donationAmount, setDonationAmount] = useState(0);
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    axios.get(`${API_URL}/charities/${id}`)
-      .then(res => setCharity(res.data))
-      .catch(err => setMessage('Error loading charity'));
-    axios.get(`${API_URL}/stories?charity_id=${id}`)
-      .then(res => setStories(res.data))
-      .catch(err => setMessage('Error loading stories'));
+    const fetchCharity = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/charities/${id}`);
+        setCharity(response.data);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to fetch charity');
+      }
+    };
+    fetchCharity();
   }, [id]);
 
-  const handleDonate = () => {
-    const token = localStorage.getItem('token');
-    axios.post(
-      `${API_URL}/donate`,
-      {
-        charity_id: id,
-        amount: parseInt(donationAmount),
-        is_anonymous: isAnonymous,
-        is_recurring: isRecurring,
-        recurring_frequency: isRecurring ? 'monthly' : null
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-      .then(res => setMessage('Donation successful!'))
-      .catch(err => setMessage(err.response.data.message));
-  };
+  if (error) {
+    return <Container className="mt-4"><p>{error}</p></Container>;
+  }
 
-  if (!charity) return <div>Loading...</div>;
+  if (!charity) {
+    return <Container className="mt-4"><p>Loading...</p></Container>;
+  }
 
   return (
-    <div>
+    <Container className="mt-4">
+      <h1>{charity.name}</h1>
+      {charity.photo_url && (
+        <img
+          src={charity.photo_url}
+          alt={charity.name}
+          style={{ maxWidth: '300px', marginBottom: '20px' }}
+        />
+      )}
       <Card className="mb-4">
-        <Card.Img variant="top" src="https://via.placeholder.com/800x400?text=Charity+Banner" />
         <Card.Body>
-          <Card.Title className="text-primary">{charity.name}</Card.Title>
-          <Card.Text>{charity.description}</Card.Text>
+          <Card.Text><strong>Description:</strong> {charity.description}</Card.Text>
+          <Card.Text><strong>Mission:</strong> {charity.mission_statement}</Card.Text>
+          <Card.Text><strong>Location:</strong> {charity.location}</Card.Text>
+          <Card.Text><strong>Founded:</strong> {charity.founded_year}</Card.Text>
+          <Card.Text><strong>Contact:</strong> {charity.contact_person} ({charity.contact_phone})</Card.Text>
+          {charity.website && (
+            <Card.Text><strong>Website:</strong> <a href={charity.website}>{charity.website}</a></Card.Text>
+          )}
         </Card.Body>
       </Card>
-      {message && <Alert variant={message.includes('Error') ? 'danger' : 'success'}>{message}</Alert>}
-      <Card className="mb-4">
+      <Card>
+        <Card.Header>Beneficiary Stories</Card.Header>
         <Card.Body>
-          <Card.Title><FaDonate /> Donate to Empower Girls</Card.Title>
-          <Form.Group className="mb-3">
-            <Form.Label>Tuinue Credits</Form.Label>
-            <Form.Control
-              type="number"
-              value={donationAmount}
-              onChange={e => setDonationAmount(e.target.value)}
-              placeholder="Enter amount"
-            />
-          </Form.Group>
-          <Form.Check
-            type="checkbox"
-            label="Anonymous Donation"
-            checked={isAnonymous}
-            onChange={e => setIsAnonymous(e.target.checked)}
-            className="mb-3"
-          />
-          <Form.Check
-            type="checkbox"
-            label="Monthly Donation"
-            checked={isRecurring}
-            onChange={e => setIsRecurring(e.target.checked)}
-            className="mb-3"
-          />
-          <Button onClick={handleDonate} variant="primary">
-            Donate Now
-          </Button>
+          {charity.stories.length === 0 ? (
+            <p>No stories available.</p>
+          ) : (
+            <ListGroup>
+              {charity.stories.map(story => (
+                <ListGroup.Item key={story.id}>
+                  <h5>{story.title}</h5>
+                  <p>{story.content}</p>
+                  {story.photo_url && (
+                    <img
+                      src={story.photo_url}
+                      alt={story.title}
+                      style={{ maxWidth: '200px', marginTop: '10px' }}
+                    />
+                  )}
+                  <p><small>Posted on {new Date(story.date).toLocaleDateString()}</small></p>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
         </Card.Body>
       </Card>
-      <h2>Beneficiary Stories</h2>
-      {stories.map(story => (
-        <Card key={story.id} className="mb-3">
-          <Card.Img variant="top" src="https://via.placeholder.com/150?text=Story" />
-          <Card.Body>
-            <Card.Title>{story.title}</Card.Title>
-            <Card.Text>{story.content}</Card.Text>
-            <Card.Footer>{new Date(story.date).toLocaleDateString()}</Card.Footer>
-          </Card.Body>
-        </Card>
-      ))}
-    </div>
+    </Container>
   );
-}
+};
 
 export default CharityProfile;

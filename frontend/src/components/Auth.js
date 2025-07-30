@@ -1,19 +1,20 @@
 import React, { useState, useContext } from 'react';
-import { Form, Button, Alert, Modal } from 'react-bootstrap';
-import { FaSignInAlt, FaUserPlus } from 'react-icons/fa';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { Container, Form, Button, Alert } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 import { AuthContext } from '../App';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 const API_URL = 'http://localhost:5000/api';
 
-function Auth() {
+const Auth = () => {
   const { updateAuth } = useContext(AuthContext);
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: '',
+    username: '',
     role: 'donor',
     charity: {
       name: '',
@@ -24,210 +25,214 @@ function Auth() {
       impact_metrics: '',
       contact_person: '',
       contact_phone: '',
-      website: ''
+      website: '',
+      photo_url: ''  // New field
     }
   });
-  const [message, setMessage] = useState('');
-  const [showPendingModal, setShowPendingModal] = useState(false);
-  const [showRejectedModal, setShowRejectedModal] = useState(false);
-  const navigate = useNavigate();
+  const [error, setError] = useState('');
 
-  const handleSubmit = async () => {
-    const url = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name.startsWith('charity.')) {
+      const field = name.split('.')[1];
+      setFormData({ ...formData, charity: { ...formData.charity, [field]: value } });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
     try {
-      const res = await axios.post(url, formData);
-      if (!res || !res.data) {
-        setMessage('Invalid response from server');
-        return;
-      }
+      const endpoint = isLogin ? '/login' : '/register';
+      const payload = isLogin
+        ? { email: formData.email, password: formData.password }
+        : {
+            ...formData,
+            role: formData.role,
+            charity: formData.role === 'charity' ? formData.charity : undefined
+          };
+      const response = await axios.post(`${API_URL}${endpoint}`, payload);
       if (isLogin) {
-        if (res.data.message?.includes('pending')) {
-          setShowPendingModal(true);
-        } else if (res.data.message?.includes('not approved')) {
-          setShowRejectedModal(true);
-        } else {
-          setMessage('Login successful!');
-          localStorage.setItem('token', res.data.access_token);
-          localStorage.setItem('role', res.data.role);
-          updateAuth(res.data.access_token, res.data.role);
-          navigate(res.data.role === 'donor' ? '/donor' : res.data.role === 'charity' ? '/charity' : '/admin');
-        }
+        updateAuth(response.data.access_token, response.data.role, response.data.user_id, response.data.charity_id || null);
+        toast.dismiss();
+        toast.success('Logged in successfully', { position: 'top-right', toastId: 'login-success', autoClose: 5000 });
+        window.location.href = response.data.role === 'charity' ? '/charity' : response.data.role === 'donor' ? '/donor' : '/admin';
       } else {
-        setMessage('Registration successful!');
-        if (res.data.pending) {
-          setShowPendingModal(true);
-          setTimeout(() => navigate('/'), 3000);
+        toast.dismiss();
+        toast.success(response.data.message || 'Registered successfully', { position: 'top-right', toastId: 'register-success', autoClose: 5000 });
+        if (formData.role !== 'charity') {
+          updateAuth(response.data.access_token, response.data.role, response.data.user_id, null);
+          window.location.href = response.data.role === 'donor' ? '/donor' : '/admin';
         } else {
-          localStorage.setItem('token', res.data.access_token);
-          localStorage.setItem('role', res.data.role);
-          updateAuth(res.data.access_token, res.data.role);
-          navigate(res.data.role === 'donor' ? '/donor' : res.data.role === 'charity' ? '/charity' : '/admin');
+          setIsLogin(true);
         }
       }
     } catch (err) {
-      setMessage(err.response?.data?.message || 'Failed to connect to server. Please check if the backend is running.');
+      const message = err.response?.data?.message || (isLogin ? 'Login failed' : 'Registration failed');
+      setError(message);
+      toast.dismiss();
+      toast.error(message, { position: 'top-right', toastId: isLogin ? 'login-error' : 'register-error', autoClose: 5000 });
     }
   };
 
   return (
-    <div className="container mt-5">
-      <h1 className="text-center text-primary">
-        {isLogin ? <FaSignInAlt /> : <FaUserPlus />} {isLogin ? 'Login' : 'Register'}
-      </h1>
-      {message && <Alert variant={message.includes('Error') || message.includes('pending') || message.includes('not approved') || message.includes('Failed') ? 'danger' : 'success'}>{message}</Alert>}
-      <Form className="w-50 mx-auto">
-        {!isLogin && (
-          <Form.Group className="mb-3">
-            <Form.Label>Username</Form.Label>
-            <Form.Control
-              type="text"
-              value={formData.username}
-              onChange={e => setFormData({ ...formData, username: e.target.value })}
-            />
-          </Form.Group>
-        )}
+    <Container className="mt-4">
+      <h1>{isLogin ? 'Login' : 'Register'}</h1>
+      {error && <Alert variant="danger">{error}</Alert>}
+      <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3">
           <Form.Label>Email</Form.Label>
           <Form.Control
             type="email"
+            name="email"
             value={formData.email}
-            onChange={e => setFormData({ ...formData, email: e.target.value })}
+            onChange={handleChange}
+            required
           />
         </Form.Group>
         <Form.Group className="mb-3">
           <Form.Label>Password</Form.Label>
           <Form.Control
             type="password"
+            name="password"
             value={formData.password}
-            onChange={e => setFormData({ ...formData, password: e.target.value })}
+            onChange={handleChange}
+            required
           />
         </Form.Group>
         {!isLogin && (
-          <Form.Group className="mb-3">
-            <Form.Label>Role</Form.Label>
-            <Form.Select
-              value={formData.role}
-              onChange={e => setFormData({ ...formData, role: e.target.value })}
-            >
-              <option value="donor">Donor</option>
-              <option value="charity">Charity</option>
-              <option value="admin">Admin</option>
-            </Form.Select>
-          </Form.Group>
-        )}
-        {!isLogin && formData.role === 'charity' && (
           <>
             <Form.Group className="mb-3">
-              <Form.Label>Charity Name</Form.Label>
+              <Form.Label>Username</Form.Label>
               <Form.Control
                 type="text"
-                value={formData.charity.name}
-                onChange={e => setFormData({ ...formData, charity: { ...formData.charity, name: e.target.value } })}
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                required
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={formData.charity.description}
-                onChange={e => setFormData({ ...formData, charity: { ...formData.charity, description: e.target.value } })}
-              />
+              <Form.Label>Role</Form.Label>
+              <Form.Select name="role" value={formData.role} onChange={handleChange}>
+                <option value="donor">Donor</option>
+                <option value="charity">Charity</option>
+                <option value="admin">Admin</option>
+              </Form.Select>
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Mission Statement</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={formData.charity.mission_statement}
-                onChange={e => setFormData({ ...formData, charity: { ...formData.charity, mission_statement: e.target.value } })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Location (e.g., Nairobi, Kenya)</Form.Label>
-              <Form.Control
-                type="text"
-                value={formData.charity.location}
-                onChange={e => setFormData({ ...formData, charity: { ...formData.charity, location: e.target.value } })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Founded Year</Form.Label>
-              <Form.Control
-                type="number"
-                value={formData.charity.founded_year}
-                onChange={e => setFormData({ ...formData, charity: { ...formData.charity, founded_year: e.target.value } })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Impact Metrics (e.g., Supported 500 girls)</Form.Label>
-              <Form.Control
-                type="text"
-                value={formData.charity.impact_metrics}
-                onChange={e => setFormData({ ...formData, charity: { ...formData.charity, impact_metrics: e.target.value } })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Contact Person</Form.Label>
-              <Form.Control
-                type="text"
-                value={formData.charity.contact_person}
-                onChange={e => setFormData({ ...formData, charity: { ...formData.charity, contact_person: e.target.value } })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Contact Phone</Form.Label>
-              <Form.Control
-                type="text"
-                value={formData.charity.contact_phone}
-                onChange={e => setFormData({ ...formData, charity: { ...formData.charity, contact_phone: e.target.value } })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Website (optional)</Form.Label>
-              <Form.Control
-                type="url"
-                value={formData.charity.website}
-                onChange={e => setFormData({ ...formData, charity: { ...formData.charity, website: e.target.value } })}
-              />
-            </Form.Group>
+            {formData.role === 'charity' && (
+              <>
+                <Form.Group className="mb-3">
+                  <Form.Label>Charity Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="charity.name"
+                    value={formData.charity.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Description</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    name="charity.description"
+                    value={formData.charity.description}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Mission Statement</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    name="charity.mission_statement"
+                    value={formData.charity.mission_statement}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Location</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="charity.location"
+                    value={formData.charity.location}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Founded Year</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="charity.founded_year"
+                    value={formData.charity.founded_year}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Impact Metrics</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    name="charity.impact_metrics"
+                    value={formData.charity.impact_metrics}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Contact Person</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="charity.contact_person"
+                    value={formData.charity.contact_person}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Contact Phone</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="charity.contact_phone"
+                    value={formData.charity.contact_phone}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Website</Form.Label>
+                  <Form.Control
+                    type="url"
+                    name="charity.website"
+                    value={formData.charity.website}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Charity Photo URL</Form.Label>
+                  <Form.Control
+                    type="url"
+                    name="charity.photo_url"
+                    value={formData.charity.photo_url}
+                    onChange={handleChange}
+                    placeholder="https://example.com/photo.jpg"
+                  />
+                </Form.Group>
+              </>
+            )}
           </>
         )}
-        <Button onClick={handleSubmit} variant="primary" className="w-100 mb-3">
+        <Button variant="primary" type="submit">
           {isLogin ? 'Login' : 'Register'}
         </Button>
-        <Button variant="link" onClick={() => setIsLogin(!isLogin)}>
-          {isLogin ? 'Need an account? Register' : 'Already have an account? Login'}
+        <Button
+          variant="link"
+          onClick={() => setIsLogin(!isLogin)}
+          className="ms-2"
+        >
+          {isLogin ? 'Need to register?' : 'Already have an account?'}
         </Button>
       </Form>
-      <Modal show={showPendingModal} onHide={() => setShowPendingModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Application Pending</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Your charity application has been submitted and is awaiting admin approval. You will be notified via email once approved.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="primary" onClick={() => { setShowPendingModal(false); navigate('/'); }}>
-            OK
-          </Button>
-        </Modal.Footer>
-      </Modal>
-      <Modal show={showRejectedModal} onHide={() => setShowRejectedModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Application Rejected</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          We are sorry, your charity application was not approved. For further details or to appeal this decision, please contact our team at support@tuinuewasichana.org.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="primary" onClick={() => setShowRejectedModal(false)}>
-            OK
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </div>
+    </Container>
   );
-}
+};
 
 export default Auth;

@@ -1,103 +1,180 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Alert, Modal } from 'react-bootstrap';
-import { FaCheck, FaTimes } from 'react-icons/fa';
 import axios from 'axios';
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { toast } from 'react-toastify';
+import { Container, Alert, Card, Table, Button } from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'react-toastify/dist/ReactToastify.css';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const API_URL = 'http://localhost:5000/api';
 
-function AdminDashboard() {
+const AdminDashboard = () => {
   const [charities, setCharities] = useState([]);
-  const [message, setMessage] = useState('');
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [selectedCharityId, setSelectedCharityId] = useState(null);
+  const [donors, setDonors] = useState([]);
+  const [overview, setOverview] = useState({});
+  const [error, setError] = useState('');
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    axios.get(`${API_URL}/admin/charities`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setCharities(res.data))
-      .catch(err => setMessage(err.response.data.message));
-  }, []);
+    const fetchData = async () => {
+      setError('');
+      try {
+        const [charitiesRes, donorsRes, overviewRes] = await Promise.all([
+          axios.get(`${API_URL}/admin/charities`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/admin/donors`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/admin-overview`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        setCharities(charitiesRes.data);
+        setDonors(donorsRes.data);
+        setOverview(overviewRes.data);
+      } catch (err) {
+        const message = err.response?.data?.message || 'Failed to fetch dashboard data. Please try again.';
+        setError(message);
+        toast.dismiss(); // Clear existing toasts
+        toast.error(message, { position: 'top-right', toastId: 'fetch-error', autoClose: 5000 });
+      }
+    };
+    if (token) fetchData();
+  }, [token]);
 
-  const handleApproveCharity = (charityId, approved) => {
-    const token = localStorage.getItem('token');
-    axios.post(
-      `${API_URL}/admin/charities`,
-      { charity_id: charityId, approved, rejected: false },
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-      .then(res => {
-        setMessage(res.data.message);
-        setCharities(charities.map(c => c.id === charityId ? { ...c, approved, rejected: false } : c));
-      })
-      .catch(err => setMessage(err.response.data.message));
+  const handleApprove = async (charityId, approved, rejected) => {
+    try {
+      await axios.post(
+        `${API_URL}/admin/charities`,
+        { charity_id: charityId, approved, rejected },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCharities(charities.map(c => c.id === charityId ? { ...c, approved, rejected } : c));
+      toast.dismiss(); // Clear existing toasts
+      toast.success('Charity status updated', { position: 'top-right', toastId: 'approve-success', autoClose: 5000 });
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to update charity';
+      setError(message);
+      toast.dismiss(); // Clear existing toasts
+      toast.error(message, { position: 'top-right', toastId: 'approve-error', autoClose: 5000 });
+    }
   };
 
-  const handleRejectCharity = () => {
-    const token = localStorage.getItem('token');
-    axios.post(
-      `${API_URL}/admin/charities`,
-      { charity_id: selectedCharityId, approved: false, rejected: true },
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-      .then(res => {
-        setMessage(res.data.message);
-        setCharities(charities.map(c => c.id === selectedCharityId ? { ...c, approved: false, rejected: true } : c));
-        setShowRejectModal(false);
-        setSelectedCharityId(null);
-      })
-      .catch(err => setMessage(err.response.data.message));
+  const donationChartData = {
+    labels: overview.donation_graph?.labels || [],
+    datasets: [
+      {
+        label: 'Donations Made (Credits)',
+        data: overview.donation_graph?.donor_data || [],
+        borderColor: '#4BC0C0',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        fill: true
+      },
+      {
+        label: 'Donations Received (Credits)',
+        data: overview.donation_graph?.charity_data || [],
+        borderColor: '#FF6384',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        fill: true
+      }
+    ]
+  };
+
+  const creditChartData = {
+    labels: overview.credit_graph?.labels || [],
+    datasets: [
+      {
+        label: 'Credit Purchases (Credits)',
+        data: overview.credit_graph?.data || [],
+        borderColor: '#36A2EB',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        fill: true
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' },
+      title: { display: true, text: 'Performance Over Time' }
+    }
   };
 
   return (
-    <div>
-      <h1 className="text-primary mb-4">Admin Dashboard</h1>
-      {message && <Alert variant={message.includes('Error') ? 'danger' : 'success'}>{message}</Alert>}
-      <Card>
+    <Container className="mt-4">
+      <h1 className="mb-4">Admin Dashboard</h1>
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      <Card className="mb-4">
+        <Card.Header>Platform Overview</Card.Header>
         <Card.Body>
-          <Card.Title>Manage Charities</Card.Title>
+          <div className="row">
+            <div className="col-md-4">
+              <h5>Total Donors: {overview.total_donors || 0}</h5>
+              <h5>Total Charities: {overview.total_charities || 0}</h5>
+            </div>
+            <div className="col-md-4">
+              <h5>Total Donations: {overview.total_donations || 0}</h5>
+              <h5>Total Credits Donated: {overview.total_credits_donated || 0}</h5>
+            </div>
+            <div className="col-md-4">
+              <h5>Total Stories: {overview.total_stories || 0}</h5>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+
+      <Card className="mb-4">
+        <Card.Header>Donation and Credit Purchase Trends</Card.Header>
+        <Card.Body>
+          <Line data={donationChartData} options={{ ...chartOptions, plugins: { ...chartOptions.plugins, title: { display: true, text: 'Donation Trends' } } }} />
+          <Line data={creditChartData} options={{ ...chartOptions, plugins: { ...chartOptions.plugins, title: { display: true, text: 'Credit Purchase Trends' } } }} />
+        </Card.Body>
+      </Card>
+
+      <Card className="mb-4">
+        <Card.Header>Charities</Card.Header>
+        <Card.Body>
           <Table striped bordered hover>
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Name</th>
                 <th>Location</th>
-                <th>Mission</th>
-                <th>Impact Metrics</th>
-                <th>Contact</th>
                 <th>Status</th>
+                <th>Donations</th>
+                <th>Stories</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {charities.map(c => (
                 <tr key={c.id}>
-                  <td>{c.id}</td>
                   <td>{c.name}</td>
                   <td>{c.location}</td>
-                  <td>{c.mission_statement}</td>
-                  <td>{c.impact_metrics}</td>
-                  <td>{c.contact_person} ({c.contact_phone})</td>
-                  <td>{c.rejected ? 'Rejected' : c.approved ? 'Approved' : 'Pending'}</td>
+                  <td>{c.approved ? 'Approved' : c.rejected ? 'Rejected' : 'Pending'}</td>
                   <td>
-                    {!c.rejected && (
-                      <Button
-                        variant={c.approved ? 'warning' : 'success'}
-                        onClick={() => handleApproveCharity(c.id, !c.approved)}
-                        className="me-2"
-                      >
-                        {c.approved ? <FaTimes /> : <FaCheck />} {c.approved ? 'Unapprove' : 'Approve'}
-                      </Button>
-                    )}
-                    {!c.approved && (
-                      <Button
-                        variant="danger"
-                        onClick={() => {
-                          setSelectedCharityId(c.id);
-                          setShowRejectModal(true);
-                        }}
-                      >
-                        <FaTimes /> Reject
-                      </Button>
+                    {c.donations.length} (Total: {c.donations.reduce((sum, d) => sum + d.amount, 0)} credits)
+                    <ul>
+                      {c.donations.map(d => (
+                        <li key={d.id}>
+                          {d.donor_username} donated {d.amount} credits on {new Date(d.date).toLocaleDateString()} {d.is_anonymous && '(Anonymous)'}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                  <td>
+                    {c.stories.length}
+                    <ul>
+                      {c.stories.map(s => (
+                        <li key={s.id}>{s.title} (Posted: {new Date(s.date).toLocaleDateString()})</li>
+                      ))}
+                    </ul>
+                  </td>
+                  <td>
+                    {!c.approved && !c.rejected && (
+                      <>
+                        <Button className="me-2" variant="success" size="sm" onClick={() => handleApprove(c.id, true, false)}>Approve</Button>
+                        <Button variant="danger" size="sm" onClick={() => handleApprove(c.id, false, true)}>Reject</Button>
+                      </>
                     )}
                   </td>
                 </tr>
@@ -106,24 +183,54 @@ function AdminDashboard() {
           </Table>
         </Card.Body>
       </Card>
-      <Modal show={showRejectModal} onHide={() => setShowRejectModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Rejection</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to reject this charity? They will be notified and unable to access the dashboard.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowRejectModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={handleRejectCharity}>
-            Reject
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </div>
+
+      <Card>
+        <Card.Header>Donors</Card.Header>
+        <Card.Body>
+          <Table striped bordered hover>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Credits</th>
+                <th>Donations</th>
+                <th>Credit Purchases</th>
+              </tr>
+            </thead>
+            <tbody>
+              {donors.map(d => (
+                <tr key={d.id}>
+                  <td>{d.username}</td>
+                  <td>{d.email}</td>
+                  <td>{d.credits}</td>
+                  <td>
+                    {d.donations.length} (Total: {d.donations.reduce((sum, don) => sum + don.amount, 0)} credits)
+                    <ul>
+                      {d.donations.map(don => (
+                        <li key={don.id}>
+                          Donated {don.amount} credits to {don.charity_name} on {new Date(don.date).toLocaleDateString()} {don.is_anonymous && '(Anonymous)'}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                  <td>
+                    {d.credit_transactions.length} (Total: {d.credit_transactions.reduce((sum, t) => sum + t.amount, 0)} credits)
+                    <ul>
+                      {d.credit_transactions.map(t => (
+                        <li key={t.id}>
+                          Purchased {t.amount} credits on {new Date(t.date).toLocaleDateString()}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
+    </Container>
   );
-}
+};
 
 export default AdminDashboard;
