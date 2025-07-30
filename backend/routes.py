@@ -408,3 +408,95 @@ def charity_donations():
         'date': d.date.isoformat(),
         'is_anonymous': d.is_anonymous
     } for d in charity.donations])
+
+
+@api.route('/donor/credits', methods=['GET'])
+@jwt_required()
+def donor_credits():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user or user.role != 'donor':
+        return jsonify({'message': 'Access denied'}), 403
+    return jsonify({'credits': user.credits})
+
+@api.route('/donor/credit-history', methods=['GET'])
+@jwt_required()
+def donor_credit_history():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user or user.role != 'donor':
+        return jsonify({'message': 'Access denied'}), 403
+    transactions = CreditTransaction.query.filter_by(user_id=user_id).all()
+    return jsonify([{
+        'id': t.id,
+        'amount': t.amount,
+        'date': t.date.isoformat()
+    } for t in transactions])
+
+@api.route('/donor/history', methods=['GET'])
+@jwt_required()
+def donor_history():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user or user.role != 'donor':
+        return jsonify({'message': 'Access denied'}), 403
+    donations = Donation.query.filter_by(donor_id=user_id).all()
+    return jsonify([{
+        'id': d.id,
+        'charity_name': Charity.query.get(d.charity_id).name,
+        'amount': d.amount,
+        'date': d.date.isoformat(),
+        'is_anonymous': d.is_anonymous
+    } for d in donations])
+
+@api.route('/donor/donate', methods=['POST'])
+@jwt_required()
+def donor_donate():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user or user.role != 'donor':
+        return jsonify({'message': 'Access denied'}), 403
+
+    data = request.json
+    charity_id = data.get('charity_id')
+    amount = data.get('amount')
+    is_anonymous = data.get('is_anonymous', False)
+
+    if not charity_id or not amount:
+        return jsonify({'message': 'Missing required fields: charity_id and amount'}), 400
+    if not isinstance(amount, (int, float)) or amount <= 0:
+        return jsonify({'message': 'Amount must be a positive number'}), 400
+
+    charity = Charity.query.get(charity_id)
+    if not charity:
+        return jsonify({'message': 'Charity not found'}), 404
+    if not charity.approved or charity.rejected:
+        return jsonify({'message': 'Charity not approved for donations'}), 403
+    if user.credits < amount:
+        return jsonify({'message': 'Insufficient credits'}), 400
+
+    donation = Donation(
+        donor_id=user_id,
+        charity_id=charity_id,
+        amount=amount,
+        date=datetime.utcnow(),
+        is_anonymous=is_anonymous
+    )
+    user.credits -= amount
+    db.session.add(donation)
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Donation successful',
+        'donation': {
+            'id': donation.id,
+            'charity_name': charity.name,
+            'amount': donation.amount,
+            'date': donation.date.isoformat(),
+            'is_anonymous': donation.is_anonymous
+        },
+        'new_balance': user.credits
+    }), 201
+
+
+

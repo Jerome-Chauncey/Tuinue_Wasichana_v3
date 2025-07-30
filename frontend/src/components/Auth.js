@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
-import { Container, Form, Button, Alert } from 'react-bootstrap';
+import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AuthContext } from '../App';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -10,11 +11,12 @@ const API_URL = 'http://localhost:5000/api';
 
 const Auth = () => {
   const { updateAuth } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
+    username: '',
     email: '',
     password: '',
-    username: '',
     role: 'donor',
     charity: {
       name: '',
@@ -26,7 +28,7 @@ const Auth = () => {
       contact_person: '',
       contact_phone: '',
       website: '',
-      photo_url: ''  // New field
+      photo_url: ''
     }
   });
   const [error, setError] = useState('');
@@ -35,7 +37,10 @@ const Auth = () => {
     const { name, value } = e.target;
     if (name.startsWith('charity.')) {
       const field = name.split('.')[1];
-      setFormData({ ...formData, charity: { ...formData.charity, [field]: value } });
+      setFormData({
+        ...formData,
+        charity: { ...formData.charity, [field]: value }
+      });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -44,66 +49,43 @@ const Auth = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    toast.dismiss();
+
     try {
-      const endpoint = isLogin ? '/login' : '/register';
-      const payload = isLogin
-        ? { email: formData.email, password: formData.password }
-        : {
-            ...formData,
-            role: formData.role,
-            charity: formData.role === 'charity' ? formData.charity : undefined
-          };
-      const response = await axios.post(`${API_URL}${endpoint}`, payload);
+      const payload = { ...formData };
+      if (formData.role !== 'charity') {
+        delete payload.charity;
+      }
+      const response = await axios.post(`${API_URL}/${isLogin ? 'login' : 'register'}`, payload);
+      
       if (isLogin) {
         updateAuth(response.data.access_token, response.data.role, response.data.user_id, response.data.charity_id || null);
-        toast.dismiss();
         toast.success('Logged in successfully', { position: 'top-right', toastId: 'login-success', autoClose: 5000 });
-        window.location.href = response.data.role === 'charity' ? '/charity' : response.data.role === 'donor' ? '/donor' : '/admin';
+        navigate(response.data.role === 'donor' ? '/donor' : response.data.role === 'charity' ? '/charity' : '/admin');
       } else {
-        toast.dismiss();
-        toast.success(response.data.message || 'Registered successfully', { position: 'top-right', toastId: 'register-success', autoClose: 5000 });
-        if (formData.role !== 'charity') {
-          updateAuth(response.data.access_token, response.data.role, response.data.user_id, null);
-          window.location.href = response.data.role === 'donor' ? '/donor' : '/admin';
-        } else {
+        if (formData.role === 'charity') {
+          toast.success('Charity registered, pending approval', { position: 'top-right', toastId: 'register-success', autoClose: 5000 });
           setIsLogin(true);
+        } else {
+          updateAuth(response.data.access_token, response.data.role, response.data.user_id, null);
+          toast.success('Registered successfully', { position: 'top-right', toastId: 'register-success', autoClose: 5000 });
+          navigate(response.data.role === 'donor' ? '/donor' : '/admin');
         }
       }
     } catch (err) {
-      const message = err.response?.data?.message || (isLogin ? 'Login failed' : 'Registration failed');
+      const message = err.response?.data?.message || (isLogin ? 'Failed to login' : 'Failed to register');
       setError(message);
-      toast.dismiss();
-      toast.error(message, { position: 'top-right', toastId: isLogin ? 'login-error' : 'register-error', autoClose: 5000 });
+      toast.error(message, { position: 'top-right', toastId: 'auth-error', autoClose: 5000 });
     }
   };
 
   return (
     <Container className="mt-4">
-      <h1>{isLogin ? 'Login' : 'Register'}</h1>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
-          <Form.Label>Email</Form.Label>
-          <Form.Control
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Password</Form.Label>
-          <Form.Control
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </Form.Group>
-        {!isLogin && (
-          <>
+      <Card>
+        <Card.Header>{isLogin ? 'Login' : 'Register'}</Card.Header>
+        <Card.Body>
+          {error && <Alert variant="danger">{error}</Alert>}
+          <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Username</Form.Label>
               <Form.Control
@@ -111,6 +93,29 @@ const Auth = () => {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
+                placeholder="Enter username"
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter email"
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter password"
                 required
               />
             </Form.Group>
@@ -122,7 +127,7 @@ const Auth = () => {
                 <option value="admin">Admin</option>
               </Form.Select>
             </Form.Group>
-            {formData.role === 'charity' && (
+            {!isLogin && formData.role === 'charity' && (
               <>
                 <Form.Group className="mb-3">
                   <Form.Label>Charity Name</Form.Label>
@@ -131,6 +136,7 @@ const Auth = () => {
                     name="charity.name"
                     value={formData.charity.name}
                     onChange={handleChange}
+                    placeholder="Enter charity name"
                     required
                   />
                 </Form.Group>
@@ -138,18 +144,22 @@ const Auth = () => {
                   <Form.Label>Description</Form.Label>
                   <Form.Control
                     as="textarea"
+                    rows={3}
                     name="charity.description"
                     value={formData.charity.description}
                     onChange={handleChange}
+                    placeholder="Enter charity description"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Mission Statement</Form.Label>
                   <Form.Control
                     as="textarea"
+                    rows={3}
                     name="charity.mission_statement"
                     value={formData.charity.mission_statement}
                     onChange={handleChange}
+                    placeholder="Enter mission statement"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -159,6 +169,7 @@ const Auth = () => {
                     name="charity.location"
                     value={formData.charity.location}
                     onChange={handleChange}
+                    placeholder="Enter location"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -168,15 +179,18 @@ const Auth = () => {
                     name="charity.founded_year"
                     value={formData.charity.founded_year}
                     onChange={handleChange}
+                    placeholder="Enter founded year"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Impact Metrics</Form.Label>
                   <Form.Control
                     as="textarea"
+                    rows={3}
                     name="charity.impact_metrics"
                     value={formData.charity.impact_metrics}
                     onChange={handleChange}
+                    placeholder="Enter impact metrics"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -186,6 +200,7 @@ const Auth = () => {
                     name="charity.contact_person"
                     value={formData.charity.contact_person}
                     onChange={handleChange}
+                    placeholder="Enter contact person"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -195,6 +210,7 @@ const Auth = () => {
                     name="charity.contact_phone"
                     value={formData.charity.contact_phone}
                     onChange={handleChange}
+                    placeholder="Enter contact phone"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -204,10 +220,11 @@ const Auth = () => {
                     name="charity.website"
                     value={formData.charity.website}
                     onChange={handleChange}
+                    placeholder="Enter website URL"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label>Charity Photo URL</Form.Label>
+                  <Form.Label>Photo URL</Form.Label>
                   <Form.Control
                     type="url"
                     name="charity.photo_url"
@@ -218,19 +235,19 @@ const Auth = () => {
                 </Form.Group>
               </>
             )}
-          </>
-        )}
-        <Button variant="primary" type="submit">
-          {isLogin ? 'Login' : 'Register'}
-        </Button>
-        <Button
-          variant="link"
-          onClick={() => setIsLogin(!isLogin)}
-          className="ms-2"
-        >
-          {isLogin ? 'Need to register?' : 'Already have an account?'}
-        </Button>
-      </Form>
+            <Button variant="primary" type="submit">
+              {isLogin ? 'Login' : 'Register'}
+            </Button>
+            <Button
+              variant="link"
+              onClick={() => setIsLogin(!isLogin)}
+              className="ms-2"
+            >
+              {isLogin ? 'Need to register?' : 'Already have an account?'}
+            </Button>
+          </Form>
+        </Card.Body>
+      </Card>
     </Container>
   );
 };
