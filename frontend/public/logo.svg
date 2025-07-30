@@ -1,0 +1,9 @@
+<svg width="200" height="80" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Butterfly wings -->
+  <path d="M80 40 C60 20, 60 60, 80 40 C100 20, 100 60, 80 40" fill="#FF6F61" opacity="0.8"/>
+  <path d="M120 40 C140 20, 140 60, 120 40 C100 20, 100 60, 120 40" fill="#D8BFD8" opacity="0.8"/>
+  <!-- Butterfly body -->
+  <rect x="95" y="30" width="10" height="20" fill="#4DB6AC"/>
+  <!-- Text -->
+  <text x="10" y="70" font-family="Montserrat, sans-serif" font-size="20" fill="#333333">Tuinue Wasichana</text>
+</svg>

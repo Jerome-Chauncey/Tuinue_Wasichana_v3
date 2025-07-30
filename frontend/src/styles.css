@@ -1,3 +1,190 @@
+:root {
+  --primary-pink: #FFC1CC;
+  --primary-purple: #D8BFD8;
+  --accent-coral: #FF6F61;
+  --accent-teal: #4DB6AC;
+  --background-cream: #FFF8F0;
+  --text-dark: #2D1B4E;
+}
+
 body {
-  background-color: #f8f9fa;
+  font-family: 'Montserrat', sans-serif;
+  color: var(--text-dark);
+  background-color: var(--background-cream);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+  color: var(--text-dark);
+  font-weight: 700;
+}
+
+.navbar {
+  background-color: var(--primary-pink);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+}
+
+.navbar-brand img {
+  height: 60px;
+}
+
+.nav-link {
+  color: var(--text-dark) !important;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0 1rem; 
+}
+
+.nav-link:hover {
+  color: var(--accent-coral) !important;
+}
+
+.donate-btn {
+  background-color: var(--accent-coral);
+  border-color: var(--accent-coral);
+  color: var(--background-cream);
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 0.5rem 1.5rem;
+  border: none;
+}
+
+.donate-btn:hover {
+  background-color: #e55a50; 
+  border-color: #e55a50;
+}
+
+.navbar-toggler {
+  border: none;
+  background: transparent;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='%23FF6F61' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+footer {
+  background-color: var(--primary-purple);
+  color: var(--background-cream);
+  padding: 3rem 0;
+}
+
+footer a {
+  color: var(--background-cream);
+  text-decoration: none;
+}
+
+footer a:hover {
+  color: var(--accent-teal);
+}
+
+.social-icon {
+  font-size: 1.8rem;
+  margin: 0 0.75rem;
+}
+
+.btn-cta {
+  background-color: var(--accent-coral);
+  color: var(--background-cream);
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 0.5rem 1.5rem;
+  border: none; 
+}
+
+.btn-cta:hover {
+  background-color: #e55a50;
+}
+
+.btn-cta[variant="outline-dark"] {
+  border: 2px solid var(--text-dark);
+  color: var(--text-dark);
+}
+
+.btn-cta[variant="outline-dark"]:hover {
+  background-color: var(--text-dark);
+  color: var(--background-cream);
+}
+
+.hero {
+  padding: 0;
+}
+
+.hero .row {
+  min-height: 500px; 
+}
+
+.hero-text {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-image {
+  background: url('./assets/hero-image.jpg') no-repeat center/cover;
+  height: 100%;
+  min-height: 500px;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  max-width: 500px;
+}
+
+section img {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+}
+
+.card {
+  transition: transform 0.3s ease;
+  border: none;
+  background-color: var(--background-cream);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+@media (max-width: 768px) {
+  .hero .row {
+    min-height: auto;
+  }
+
+  .hero-image {
+    min-height: 300px;
+  }
+
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  .nav-link {
+    margin: 0.5rem 0;
+  }
+
+  .donate-btn {
+    margin: 0.5rem 0;
+    width: 100%;
+  }
+
+  .navbar-nav {
+    text-align: center;
+  }
+
+  section img {
+    max-height: 300px;
+    margin-bottom: 1rem;
+  }
 }
