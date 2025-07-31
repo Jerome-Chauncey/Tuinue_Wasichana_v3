@@ -1,6 +1,15 @@
 import React, { createContext, useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import { Navbar, Nav, Container, Button, Form, FormControl, Row, Col } from "react-bootstrap";
+import {
+  Navbar,
+  Nav,
+  Container,
+  Button,
+  Form,
+  FormControl,
+  Row,
+  Col,
+} from "react-bootstrap";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -13,7 +22,7 @@ import Auth from "./components/Auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 import CharityList from "./components/CharityList";
 import PurchaseCredits from "./components/PurchaseCredits";
-import './styles.css';
+import "./styles.css";
 
 export const AuthContext = createContext();
 
@@ -91,25 +100,45 @@ function App() {
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="mx-auto">
-                <Nav.Link as={Link} to="/">Home</Nav.Link>
-                <Nav.Link as={Link} to="/about">About</Nav.Link>
-                <Nav.Link as={Link} to="/charities">Charities</Nav.Link>
-                <Nav.Link as={Link} to="/stories">Stories</Nav.Link>
-                <Nav.Link as={Link} to="/contact">Contact</Nav.Link>
+                <Nav.Link as={Link} to="/">
+                  Home
+                </Nav.Link>
+                <Nav.Link as={Link} to="/about">
+                  About
+                </Nav.Link>
+                <Nav.Link as={Link} to="/charities">
+                  Charities
+                </Nav.Link>
+                <Nav.Link as={Link} to="/stories">
+                  Stories
+                </Nav.Link>
+                <Nav.Link as={Link} to="/contact">
+                  Contact
+                </Nav.Link>
                 {auth.role === "donor" && (
                   <>
-                    <Nav.Link as={Link} to="/donor">Donor Dashboard</Nav.Link>
-                    <Nav.Link as={Link} to="/donor/purchase-credits">Purchase Credits</Nav.Link>
+                    <Nav.Link as={Link} to="/donor">
+                      Donor Dashboard
+                    </Nav.Link>
+                    <Nav.Link as={Link} to="/donor/purchase-credits">
+                      Purchase Credits
+                    </Nav.Link>
                   </>
                 )}
                 {auth.role === "charity" && (
                   <>
-                    <Nav.Link as={Link} to="/charity">Charity Dashboard</Nav.Link>
-                    <Nav.Link as={Link} to={`/charity/${auth.charityId}`}>My Profile</Nav.Link>
+                    <Nav.Link as={Link} to="/charity">
+                      Charity Dashboard
+                    </Nav.Link>
+                    <Nav.Link as={Link} to={`/charity/${auth.charityId}`}>
+                      My Profile
+                    </Nav.Link>
                   </>
                 )}
                 {auth.role === "admin" && (
-                  <Nav.Link as={Link} to="/admin">Admin Dashboard</Nav.Link>
+                  <Nav.Link as={Link} to="/admin">
+                    Admin Dashboard
+                  </Nav.Link>
                 )}
               </Nav>
               <Nav>
@@ -117,11 +146,17 @@ function App() {
                   <i className="fas fa-donate mr-2"></i> Donate
                 </Button> */}
                 {auth.token ? (
-                  <Button variant="link" onClick={handleLogout} className="text-dark">
+                  <Button
+                    variant="link"
+                    onClick={handleLogout}
+                    className="text-dark"
+                  >
                     Logout
                   </Button>
                 ) : (
-                  <Nav.Link as={Link} to="/auth">Login/Register</Nav.Link>
+                  <Nav.Link as={Link} to="/auth">
+                    Login/Register
+                  </Nav.Link>
                 )}
               </Nav>
             </Navbar.Collapse>
@@ -177,43 +212,85 @@ function App() {
               <Col md={4}>
                 <h5>Tuinue Wasichana</h5>
                 <p>
-                  Empowering girls across Africa by tackling period poverty and educational barriers with sustainable menstrual products and health education.
+                  Empowering girls across Africa by tackling period poverty and
+                  educational barriers with sustainable menstrual products and
+                  health education.
                 </p>
                 <div>
-                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
+                  <a
+                    href="https://facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <i className="fab fa-facebook-f social-icon"></i>
                   </a>
-                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
+                  <a
+                    href="https://twitter.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <i className="fab fa-twitter social-icon"></i>
                   </a>
-                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
+                  <a
+                    href="https://instagram.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <i className="fab fa-instagram social-icon"></i>
                   </a>
-                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
+                  <a
+                    href="https://linkedin.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <i className="fab fa-linkedin-in social-icon"></i>
                   </a>
+                  <div className="mt-3 text-center">
+                    {" "}
+                    <img
+                      src="/logo.png" 
+                      alt="Company Logo"
+                      style={{ width: "120px", marginRight: "300px" }} 
+                    />
+                  </div>
                 </div>
               </Col>
               <Col md={4}>
                 <h5>Quick Links</h5>
                 <Nav className="flex-column">
-                  <Nav.Link as={Link} to="/">Home</Nav.Link>
-                  <Nav.Link as={Link} to="/about">About</Nav.Link>
-                  <Nav.Link as={Link} to="/charities">Charities</Nav.Link>
-                  <Nav.Link as={Link} to="/stories">Stories</Nav.Link>
-                  <Nav.Link as={Link} to="/contact">Contact</Nav.Link>
-                  <Nav.Link as={Link} to="/donate">Donate</Nav.Link>
+                  <Nav.Link as={Link} to="/">
+                    Home
+                  </Nav.Link>
+                  <Nav.Link as={Link} to="/about">
+                    About
+                  </Nav.Link>
+                  <Nav.Link as={Link} to="/charities">
+                    Charities
+                  </Nav.Link>
+                  <Nav.Link as={Link} to="/stories">
+                    Stories
+                  </Nav.Link>
+                  <Nav.Link as={Link} to="/contact">
+                    Contact
+                  </Nav.Link>
+                  <Nav.Link as={Link} to="/donate">
+                    Donate
+                  </Nav.Link>
                 </Nav>
               </Col>
               <Col md={4}>
                 <h5>Join Our Newsletter</h5>
                 <Form>
                   <Form.Group className="mb-3">
-                    <FormControl type="email" placeholder="Enter email for updates" />
+                    <FormControl
+                      type="email"
+                      placeholder="Enter email for updates"
+                    />
                   </Form.Group>
                   <Button className="btn-cta">
                     <i className="fas fa-envelope mr-2"></i> Subscribe
                   </Button>
+                  
                 </Form>
               </Col>
             </Row>
@@ -243,7 +320,9 @@ const About = () => (
       <Col md={6}>
         <h1>About Us</h1>
         <p className="lead">
-          Tuinue Wasichana empowers girls in Africa by addressing period poverty and educational barriers with sustainable menstrual products and health education.
+          Tuinue Wasichana empowers girls in Africa by addressing period poverty
+          and educational barriers with sustainable menstrual products and
+          health education.
         </p>
         <Button as={Link} to="/donate" className="btn-cta">
           <i className="fas fa-donate mr-2"></i> Support Our Mission
@@ -267,7 +346,8 @@ const Stories = () => (
       <Col md={6}>
         <h1>Stories of Impact</h1>
         <p className="lead">
-          Discover inspiring stories of girls and communities transformed by your support, staying in school and thriving.
+          Discover inspiring stories of girls and communities transformed by
+          your support, staying in school and thriving.
         </p>
         <Button as={Link} to="/charities" className="btn-cta">
           <i className="fas fa-book mr-2"></i> Explore Charities
@@ -291,7 +371,9 @@ const Contact = () => (
       <Col md={6}>
         <h1>Contact Us</h1>
         <p className="lead">
-          Reach out at <a href="mailto:info@tuinuewasichana.org">info@tuinuewasichana.org</a> or follow us on social media.
+          Reach out at{" "}
+          <a href="mailto:info@tuinuewasichana.org">info@tuinuewasichana.org</a>{" "}
+          or follow us on social media.
         </p>
         <Button as={Link} to="/donate" className="btn-cta">
           <i className="fas fa-donate mr-2"></i> Make a Difference
@@ -315,7 +397,8 @@ const Donate = () => (
       <Col md={6}>
         <h1>Donate Today</h1>
         <p className="lead">
-          Your contribution keeps girls in school every day of the month. Join as a monthly donor or make a one-time gift.
+          Your contribution keeps girls in school every day of the month. Join
+          as a monthly donor or make a one-time gift.
         </p>
         <Button as={Link} to="/auth" className="btn-cta">
           <i className="fas fa-donate mr-2"></i> Become a Donor
