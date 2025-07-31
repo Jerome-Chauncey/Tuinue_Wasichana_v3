@@ -133,9 +133,9 @@ const Home = () => {
               className="order-md-1 d-flex flex-column"
               style={{ height: "100%" }}
             >
-              <div style={{ marginTop: "0", marginBottom: "150px" }}>
+              <div style={{ marginTop: "0", marginBottom: "15px" }}>
                 <h2>BREAKING BARRIERS, BUILDING DREAMS</h2>
-                <p className="fs-16">
+                <p className="">
                   By providing sustainable menstrual solutions and education, we
                   ensure girls stay in school every day, unlocking their
                   potential.
