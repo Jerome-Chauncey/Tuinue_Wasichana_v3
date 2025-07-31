@@ -43,7 +43,7 @@ const AdminDashboard = () => {
   const handleApprove = async (charityId, approved, rejected) => {
     try {
       await axios.post(
-        `${API_URL}/admin/charities`,
+        `${API_URL}/api/admin/charities`,
         { charity_id: charityId, approved, rejected },
         { headers: { Authorization: `Bearer ${token}` } }
       );

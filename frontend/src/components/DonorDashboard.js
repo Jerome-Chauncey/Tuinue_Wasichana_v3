@@ -98,7 +98,7 @@ const DonorDashboard = () => {
 
     try {
       const response = await axios.post(
-        `${API_URL}/donor/donate`,
+        `${API_URL}/api/donor/donate`,
         {
           charity_id: parseInt(donationForm.charity_id),
           amount: parseFloat(donationForm.amount),

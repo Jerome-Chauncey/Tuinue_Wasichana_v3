@@ -83,7 +83,7 @@ const CharityDashboard = () => {
     }
     try {
       const response = await axios.post(
-        `${API_URL}/stories`,
+        `${API_URL}/api/stories`,
         storyForm,
         { headers: { Authorization: `Bearer ${auth.token}` } }
       );

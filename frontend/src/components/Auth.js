@@ -60,7 +60,7 @@ const Auth = () => {
       if (formData.role !== 'charity') {
         delete payload.charity;
       }
-      const response = await axios.post(`${API_URL}/${isLogin ? 'login' : 'register'}`, payload);
+      const response = await axios.post(`${API_URL}/api/${isLogin ? 'login' : 'register'}`, payload);
       
       if (isLogin) {
         updateAuth(response.data.access_token, response.data.role, response.data.user_id, response.data.charity_id || null);
@@ -274,7 +274,7 @@ const Auth = () => {
               setResetLoading(true);
               setResetMessage('');
               try {
-                await axios.post(`${API_URL}/password-reset/request`, { email: resetEmail });
+                await axios.post(`${API_URL}/api/password-reset/request`, { email: resetEmail });
                 setResetMessage('If that email exists, a reset link will be sent.');
               } catch (err) {
                 setResetMessage('Error sending reset email.');

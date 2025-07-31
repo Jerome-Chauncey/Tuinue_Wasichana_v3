@@ -17,7 +17,7 @@ const PurchaseCredits = () => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        `${API_URL}/credits/purchase`,
+        `${API_URL}/api/credits/purchase`,
         { amount: parseInt(amount) },
         { headers: { Authorization: `Bearer ${auth.token}` } }
       );
