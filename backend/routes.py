@@ -53,45 +53,81 @@ def register():
 @api.route('/login', methods=['POST'])
 def login():
     data = request.json
-    user = User.query.filter_by(email=data['email']).first()
-    if not user or not bcrypt.checkpw(data['password'].encode('utf-8'), user.password.encode('utf-8')):
-        return jsonify({'message': 'Invalid credentials'}), 401
-    if user.role == 'charity':
-        charity = Charity.query.filter_by(user_id=user.id).first()
-        if not charity:
-            return jsonify({'message': 'Charity not found'}), 404
-        if charity.rejected:
-            return jsonify({
-                'message': 'We are sorry, your charity application was not approved. Please contact support@tuinuewasichana.org for more details.'
-            }), 403
-        if not charity.approved:
-            return jsonify({'message': 'Charity application pending approval'}), 403
-    access_token = create_access_token(identity=user.id)
-    response = {'user_id': user.id, 'access_token': access_token, 'role': user.role}
-    if user.role == 'charity' and charity:
-        response['charity_id'] = charity.id
-    return jsonify(response)
+    # Validate required fields
+    if not data.get('email') or not data.get('password'):
+        return jsonify({'message': 'Email and password are required'}), 400
+    
+    try:
+        user = User.query.filter_by(email=data['email']).first()
+        if not user or not bcrypt.checkpw(data['password'].encode('utf-8'), user.password.encode('utf-8')):
+            return jsonify({'message': 'Invalid credentials'}), 401
+        
+        # Additional checks for charity users
+        charity = None
+        if user.role == 'charity':
+            charity = Charity.query.filter_by(user_id=user.id).first()
+            if not charity:
+                return jsonify({'message': 'Charity not found'}), 404
+            if charity.rejected:
+                return jsonify({
+                    'message': 'We are sorry, your charity application was not approved. Please contact support@tuinuewasichana.org for more details.'
+                }), 403
+            if not charity.approved:
+                return jsonify({'message': 'Charity application pending approval'}), 403
+        
+        # Create token with string identity and additional claims
+        access_token = create_access_token(
+            identity=str(user.id),
+            additional_claims={
+                'role': user.role,
+                'user_id': user.id,
+                'charity_id': charity.id if (user.role == 'charity' and charity) else None
+            }
+        )
+        
+        response = {
+            'access_token': access_token,
+            'role': user.role,
+            'user_id': user.id
+        }
+        
+        if user.role == 'charity' and charity:
+            response['charity_id'] = charity.id
+            
+        return jsonify(response), 200
+        
+    except Exception as e:
+        return jsonify({'message': f'Login failed: {str(e)}'}), 500
 
 @api.route('/verify-token', methods=['GET'])
 @jwt_required()
 def verify_token():
     try:
-        user_id = get_jwt_identity()
-        if not user_id:
-            return jsonify({"valid": False, "message": "Invalid token"}), 200
+        current_user = get_jwt_identity()
+        claims = get_jwt()
         
-        user = User.query.get(user_id)
+        if not current_user:
+            return jsonify({"valid": False, "message": "Invalid token"}), 401
+        
+        user = User.query.get(current_user)
         if not user:
-            return jsonify({"valid": False, "message": "User not found"}), 200
+            return jsonify({"valid": False, "message": "User not found"}), 404
         
-        return jsonify({
+        # Verify token claims match user data
+        if claims.get('role') != user.role or str(claims.get('user_id')) != str(user.id):
+            return jsonify({"valid": False, "message": "Token claims mismatch"}), 401
+        
+        response = {
             "valid": True,
             "role": user.role,
             "user_id": user.id,
             "charity_id": user.charity[0].id if user.role == 'charity' and user.charity else None
-        }), 200
+        }
+        
+        return jsonify(response), 200
+        
     except Exception as e:
-        return jsonify({"valid": False, "message": str(e)}), 200
+        return jsonify({"valid": False, "message": str(e)}), 401
 
 @api.route('/admin-overview', methods=['GET'])
 @jwt_required()
