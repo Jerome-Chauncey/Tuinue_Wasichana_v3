@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Container, Card, Button } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Container, Card, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = "http://localhost:5000/api";
 
 const CharityList = () => {
   const [charities, setCharities] = useState([]);
@@ -15,7 +15,7 @@ const CharityList = () => {
         const response = await axios.get(`${API_URL}/charities`);
         setCharities(response.data);
       } catch (err) {
-        console.error('Failed to fetch charities:', err);
+        console.error("Failed to fetch charities:", err);
       }
     };
     fetchCharities();
@@ -28,18 +28,23 @@ const CharityList = () => {
         <p>No charities available.</p>
       ) : (
         <div className="row">
-          {charities.map(charity => (
+          {charities.map((charity) => (
             <Card key={charity.id} className="col-md-4 mb-4">
               {charity.photo_url && (
                 <Card.Img
                   variant="top"
                   src={charity.photo_url}
                   alt={charity.name}
-                  style={{ height: '200px', objectFit: 'cover' }}
+                  style={{ height: "200px", objectFit: "cover" }}
                 />
               )}
               <Card.Body>
-                <Card.Title>{charity.name}</Card.Title>
+                <Card.Title
+                  className="card fw-bold"
+                  style={{ fontWeight: "bold !important" }}
+                >
+                  {charity.name}
+                </Card.Title>
                 <Card.Text>{charity.description}</Card.Text>
                 <Link to={`/charity/${charity.id}`}>
                   <Button variant="primary">View Details</Button>

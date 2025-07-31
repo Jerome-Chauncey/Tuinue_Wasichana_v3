@@ -206,7 +206,7 @@ function App() {
           <Route path="/auth" element={<Auth />} />
         </Routes>
 
-        <footer className="mt-5">
+        <footer className="">
           <Container>
             <Row>
               <Col md={4}>
@@ -319,7 +319,7 @@ const About = () => (
     <Row className="align-items-center">
       <Col md={6}>
         <h1>About Us</h1>
-        <p className="lead">
+        <p className="">
           Tuinue Wasichana empowers girls in Africa by addressing period poverty
           and educational barriers with sustainable menstrual products and
           health education.
@@ -345,7 +345,7 @@ const Stories = () => (
     <Row className="align-items-center">
       <Col md={6}>
         <h1>Stories of Impact</h1>
-        <p className="lead">
+        <p className="">
           Discover inspiring stories of girls and communities transformed by
           your support, staying in school and thriving.
         </p>
@@ -370,7 +370,7 @@ const Contact = () => (
     <Row className="align-items-center">
       <Col md={6}>
         <h1>Contact Us</h1>
-        <p className="lead">
+        <p className="">
           Reach out at{" "}
           <a href="mailto:info@tuinuewasichana.org">info@tuinuewasichana.org</a>{" "}
           or follow us on social media.
@@ -396,7 +396,7 @@ const Donate = () => (
     <Row className="align-items-center">
       <Col md={6}>
         <h1>Donate Today</h1>
-        <p className="lead">
+        <p className="">
           Your contribution keeps girls in school every day of the month. Join
           as a monthly donor or make a one-time gift.
         </p>

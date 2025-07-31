@@ -32,7 +32,7 @@ h1, h2, h3, h4, h5, h6 {
 .nav-link {
   color: var(--text-dark) !important;
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   margin: 0 1rem; 
 }
 
@@ -45,7 +45,7 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--accent-coral);
   color: var(--background-cream);
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   padding: 0.5rem 1.5rem;
   border: none;
 }
@@ -80,7 +80,7 @@ footer a:hover {
 }
 
 .social-icon {
-  font-size: 1.8rem;
+  font-size: 2.5rem;
   margin: 0 0.75rem;
 }
 
@@ -88,7 +88,7 @@ footer a:hover {
   background-color: var(--accent-coral);
   color: var(--background-cream);
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   padding: 0.5rem 1.5rem;
   border: none; 
 }
@@ -129,11 +129,11 @@ footer a:hover {
 }
 
 .hero h1 {
-  font-size: 2.5rem;
+  font-size: 2.9rem;
 }
 
 .hero p {
-  font-size: 1.2rem;
+  font-size: 1.7rem;
   max-width: 500px;
 }
 
@@ -188,3 +188,18 @@ section img {
     margin-bottom: 1rem;
   }
 }
+
+h4 {
+  font-size: 1.8rem;
+}
+
+p{
+  font-size: 1.4rem;
+}
+
+h2{
+  font-size: 2.2rem;
+}
+
+
+
