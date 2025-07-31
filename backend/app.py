@@ -35,12 +35,7 @@ def test():
 def cors_test():
     return jsonify({'message': 'CORS test'}), 200
 
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'https://tuinue-wasichana-v3-1.onrender.com')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
+
 
 if __name__ == '__main__':
     app.run(debug=True)
