@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from extensions import db, jwt
 from routes import api
@@ -24,6 +24,10 @@ with app.app_context():
 @app.route('/api/test')
 def test():
     return {"message": "API is running"}, 200
+
+@app.route('/api/cors-test')
+def cors_test():
+    return jsonify({'message': 'CORS test'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
