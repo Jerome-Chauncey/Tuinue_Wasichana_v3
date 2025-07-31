@@ -3,6 +3,7 @@ from flask_cors import CORS
 from extensions import db, jwt
 from routes import api
 from config import Config
+from reset_routes import reset_bp
 
 app = Flask(__name__)
 
@@ -14,6 +15,7 @@ db.init_app(app)
 jwt.init_app(app)
 
 app.register_blueprint(api, url_prefix='/api')
+app.register_blueprint(reset_bp, url_prefix='/api/password-reset')
 
 with app.app_context():
     from models import User, Charity, Donation, Story, CreditTransaction
