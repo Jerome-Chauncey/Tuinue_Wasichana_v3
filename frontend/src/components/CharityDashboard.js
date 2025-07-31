@@ -6,7 +6,7 @@ import { AuthContext } from '../App';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 
-const API_URL = 'hhttps://tuinue-wasichana-v3.onrender.com';
+const API_URL = 'https://tuinue-wasichana-v3.onrender.com';
 
 const CharityDashboard = () => {
   const { auth } = useContext(AuthContext);
@@ -21,48 +21,50 @@ const CharityDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       setError('');
-      if (!auth.charityId) {
-        setError('Charity ID not found. Please log in again.');
-        toast.dismiss();
-        toast.error('Charity ID not found. Please log in again.', { position: 'top-right', toastId: 'charity-id-error', autoClose: 5000 });
+      if (!auth.token || auth.role !== 'charity') {
+        setError('Not authorized');
+        toast.error('Not authorized', { position: 'top-right', toastId: 'auth-error', autoClose: 5000 });
         return;
       }
       try {
-        const [statusResponse, donationsResponse, storiesResponse] = await Promise.all([
+        const [statusResponse, donationsResponse] = await Promise.all([
           axios.get(`${API_URL}/api/charity/status`, {
             headers: { Authorization: `Bearer ${auth.token}` }
           }),
           axios.get(`${API_URL}/api/charity/donations`, {
             headers: { Authorization: `Bearer ${auth.token}` }
-          }),
-          axios.get(`${API_URL}/api/stories?charity_id=${auth.charityId}`, {
+          })
+        ]);
+        setStatus(statusResponse.data);
+        setDonations(donationsResponse.data);
+
+        // Fetch stories only if charityId is available or use status.id
+        const charityId = statusResponse.data?.id || auth.charityId;
+        if (charityId) {
+          const storiesResponse = await axios.get(`${API_URL}/api/stories?charity_id=${charityId}`, {
             headers: { Authorization: `Bearer ${auth.token}` }
           }).catch(err => {
             if (err.response?.status === 404) {
               return { data: [] };
             }
             throw err;
-          })
-        ]);
-        setStatus(statusResponse.data);
-        setDonations(donationsResponse.data);
-        setStories(storiesResponse.data);
+          });
+          setStories(storiesResponse.data);
+        } else {
+          setStories([]);
+          console.warn('No charityId available, stories not fetched');
+        }
       } catch (err) {
-        const message = err.response?.data?.message || 'Failed to fetch charity data';
+        const message = err.response?.data?.message || `Failed to fetch charity data: ${err.message}`;
         setError(message);
-        toast.dismiss();
         toast.error(message, { position: 'top-right', toastId: 'charity-error', autoClose: 5000 });
+        console.error('Fetch error:', err);
       }
     };
-    if (auth.token && auth.role === 'charity') {
-      fetchData();
-    } else {
-      setError('Not authorized');
-      toast.dismiss();
-      toast.error('Not authorized', { position: 'top-right', toastId: 'auth-error', autoClose: 5000 });
-    }
-  }, [auth.token, auth.role, auth.charityId]);
+    fetchData();
+  }, [auth.token, auth.role]);
 
+  // Rest of the component (handleStoryChange, handleEditStoryChange, etc.) remains the same
   const handleStoryChange = (e) => {
     const { name, value } = e.target;
     setStoryForm({ ...storyForm, [name]: value });
@@ -77,7 +79,6 @@ const CharityDashboard = () => {
     e.preventDefault();
     if (!storyForm.title.trim() || !storyForm.content.trim()) {
       setError('Title and content are required');
-      toast.dismiss();
       toast.error('Title and content are required', { position: 'top-right', toastId: 'story-error', autoClose: 5000 });
       return;
     }
@@ -89,12 +90,10 @@ const CharityDashboard = () => {
       );
       setStories([...stories, response.data.story]);
       setStoryForm({ title: '', content: '', photo_url: '' });
-      toast.dismiss();
       toast.success('Story created successfully', { position: 'top-right', toastId: 'story-success', autoClose: 5000 });
     } catch (err) {
       const message = err.response?.data?.message || 'Failed to create story';
       setError(message);
-      toast.dismiss();
       toast.error(message, { position: 'top-right', toastId: 'story-error', autoClose: 5000 });
     }
   };
@@ -103,7 +102,6 @@ const CharityDashboard = () => {
     e.preventDefault();
     if (!editStory.title.trim() || !editStory.content.trim()) {
       setError('Title and content are required');
-      toast.dismiss();
       toast.error('Title and content are required', { position: 'top-right', toastId: 'edit-story-error', autoClose: 5000 });
       return;
     }
@@ -116,12 +114,10 @@ const CharityDashboard = () => {
       setStories(stories.map(s => s.id === editStory.id ? response.data.story : s));
       setEditStory(null);
       setShowEditModal(false);
-      toast.dismiss();
       toast.success('Story updated successfully', { position: 'top-right', toastId: 'edit-story-success', autoClose: 5000 });
     } catch (err) {
       const message = err.response?.data?.message || 'Failed to update story';
       setError(message);
-      toast.dismiss();
       toast.error(message, { position: 'top-right', toastId: 'edit-story-error', autoClose: 5000 });
     }
   };
