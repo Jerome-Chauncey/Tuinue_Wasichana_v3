@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 app.config.from_object(Config)
 
-CORS(app, resources={r"/api/*": {"origins": "*"}})  
+CORS(app)  
 
 db.init_app(app)
 jwt.init_app(app)
