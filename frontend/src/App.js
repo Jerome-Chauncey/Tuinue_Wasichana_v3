@@ -86,7 +86,7 @@ function App() {
         <Navbar expand="lg" className="sticky-top">
           <Container>
             <Navbar.Brand as={Link} to="/">
-              <img src="/logo.svg" alt="Tuinue Wasichana Logo" />
+              <img src="/logo.png" alt="Tuinue Wasichana Logo" />
             </Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
