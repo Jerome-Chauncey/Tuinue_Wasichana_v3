@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import { AuthContext } from '../App';
+import React, { useContext, useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { AuthContext } from "../App";
 
-const API_URL = 'https://tuinue-wasichana-v3.onrender.com';
+const API_URL = "https://tuinue-wasichana-v3.onrender.com";
 
 function ProtectedRoute({ children, allowedRole }) {
   const { auth } = useContext(AuthContext);
@@ -16,17 +16,25 @@ function ProtectedRoute({ children, allowedRole }) {
       if (auth.token) {
         setIsValidating(true);
         try {
-          await axios.get(`${API_URL}/api/verify-token`, {
-            headers: { Authorization: `Bearer ${auth.token}` }
+          const response = await axios.get(`${API_URL}/api/verify-token`, {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+              "Content-Type": "application/json",
+            },
           });
-          setIsValid(true);
+
+          if (response.data.valid) {
+            setIsValid(true);
+          } else {
+            throw new Error("Invalid token");
+          }
         } catch (err) {
           setIsValid(false);
-          toast.error('Session expired. Please log in again.', { position: 'top-right' });
-          localStorage.removeItem('token');
-          localStorage.removeItem('role');
-          localStorage.removeItem('userId');
-          localStorage.removeItem('charityId');
+          toast.error("Session expired. Please log in again.");
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+          localStorage.removeItem("userId");
+          localStorage.removeItem("charityId");
         } finally {
           setIsValidating(false);
         }
@@ -42,16 +50,18 @@ function ProtectedRoute({ children, allowedRole }) {
   }
 
   if (!auth.token || isValid === false) {
-    toast.warn('Please log in to access this page.', { position: 'top-right' });
+    toast.warn("Please log in to access this page.", { position: "top-right" });
     return <Navigate to="/auth" />;
   }
 
   if (allowedRole && auth.role !== allowedRole) {
-    toast.warn(`Access denied. You are not a ${allowedRole}.`, { position: 'top-right' });
+    toast.warn(`Access denied. You are not a ${allowedRole}.`, {
+      position: "top-right",
+    });
     // Role-based redirects
-    if (auth.role === 'donor') return <Navigate to="/donor" />;
-    if (auth.role === 'charity') return <Navigate to="/charity" />;
-    if (auth.role === 'admin') return <Navigate to="/admin" />;
+    if (auth.role === "donor") return <Navigate to="/donor" />;
+    if (auth.role === "charity") return <Navigate to="/charity" />;
+    if (auth.role === "admin") return <Navigate to="/admin" />;
     return <Navigate to="/" />;
   }
 

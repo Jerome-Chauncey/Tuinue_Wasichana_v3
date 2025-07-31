@@ -13,9 +13,11 @@ CORS(app, resources={
     r"/api/*": {
         "origins": ["https://tuinue-wasichana-v3-1.onrender.com"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
     }
-}) 
+})
+
 
 db.init_app(app)
 jwt.init_app(app)
@@ -30,12 +32,6 @@ with app.app_context():
 @app.route('/api/test')
 def test():
     return {"message": "API is running"}, 200
-
-@app.route('/api/cors-test')
-def cors_test():
-    return jsonify({'message': 'CORS test'}), 200
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)

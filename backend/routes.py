@@ -78,8 +78,14 @@ def verify_token():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'message': 'User not found'}), 404
-    return jsonify({'message': 'Token is valid'}), 200
+        return jsonify({"valid": False, "message": "User not found"}), 200
+    
+    return jsonify({
+        "valid": True,
+        "role": user.role,
+        "user_id": user.id,
+        "charity_id": user.charity[0].id if user.role == 'charity' else None
+    }), 200
 
 @api.route('/admin-overview', methods=['GET'])
 @jwt_required()

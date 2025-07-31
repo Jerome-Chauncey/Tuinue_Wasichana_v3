@@ -23,8 +23,13 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import CharityList from "./components/CharityList";
 import PurchaseCredits from "./components/PurchaseCredits";
 import "./styles.css";
+import axios from 'axios';
+
 
 export const AuthContext = createContext();
+
+const API_URL = 'https://tuinue-wasichana-v3.onrender.com';
+
 
 function App() {
   const [auth, setAuth] = useState({
@@ -64,24 +69,18 @@ function App() {
     const verifyToken = async () => {
       if (auth.token) {
         try {
-          const response = await fetch(
-            "https://tuinue-wasichana-v3.onrender.com/api/verify-token",
-            {
-              headers: { Authorization: `Bearer ${auth.token}` },
-            }
-          );
-          if (!response.ok) {
-            toast.error("Session expired, please log in again", {
-              position: "top-right",
-              toastId: "session-expired",
-            });
-            updateAuth(null, null, null, null);
+          const response = await axios.get(`${API_URL}/api/verify-token`, {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.data.valid) {
+            throw new Error("Invalid token");
           }
         } catch (err) {
-          toast.error("Failed to verify session", {
-            position: "top-right",
-            toastId: "verify-error",
-          });
+          toast.error("Session expired, please log in again");
           updateAuth(null, null, null, null);
         }
       }
@@ -248,9 +247,9 @@ function App() {
                   <div className="mt-3 text-center">
                     {" "}
                     <img
-                      src="/logo.png" 
+                      src="/logo.png"
                       alt="Company Logo"
-                      style={{ width: "120px", marginRight: "300px" }} 
+                      style={{ width: "120px", marginRight: "300px" }}
                     />
                   </div>
                 </div>
@@ -290,7 +289,6 @@ function App() {
                   <Button className="btn-cta">
                     <i className="fas fa-envelope mr-2"></i> Subscribe
                   </Button>
-                  
                 </Form>
               </Col>
             </Row>
