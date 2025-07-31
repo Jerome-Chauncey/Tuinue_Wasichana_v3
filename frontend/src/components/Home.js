@@ -86,28 +86,37 @@ const Home = () => {
       </section>
 
       <section className="py-5">
-        <Container>
-          <Row className="align-items-center">
-            <Col md={6} className="order-md-2">
-              <img
-                src={impact}
-                alt="Girls with reusable pads"
-                className="img-fluid"
-                style={{ maxHeight: '600px', objectFit: 'cover', objectPosition: 'top', width: '100%',}}
-              />
-            </Col>
-            <Col md={6} className="order-md-1">
-              <h2>Breaking Barriers, Building Dreams</h2>
-              <p className="lead">
-                By providing sustainable menstrual solutions and education, we ensure girls stay in school every day, unlocking their potential.
-              </p>
-              <Button as={Link} to="/donate" className="btn-cta">
-                <i className="fas fa-users mr-2"></i> Support Our Mission
-              </Button>
-            </Col>
-          </Row>
-        </Container>
-      </section>
+  <Container>
+    <Row className="align-items-center">
+      <Col md={6} className="order-md-2">
+        <img
+          src={impact}
+          alt="Girls with reusable pads"
+          className="img-fluid"
+          style={{ 
+            maxHeight: '600px', 
+            objectFit: 'cover', 
+            objectPosition: 'top', 
+            width: '100%',
+          }}
+        />
+      </Col>
+      <Col md={6} className="order-md-1 d-flex flex-column" style={{ height: '100%' }}>
+        <div style={{ marginTop: '0', marginBottom: '150px' }}>
+          <h2>BREAKING BARRIERS, BUILDING DREAMS</h2>
+          <p className="lead">
+            By providing sustainable menstrual solutions and education, we ensure girls stay in school every day, unlocking their potential.
+          </p>
+        </div>
+        <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+          <Button as={Link} to="/donate" className="btn-cta">
+            <i className="fas fa-users mr-2"></i> Support Our Mission
+          </Button>
+        </div>
+      </Col>
+    </Row>
+  </Container>
+</section>
 
       
 
