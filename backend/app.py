@@ -21,5 +21,9 @@ with app.app_context():
     from models import User, Charity, Donation, Story, CreditTransaction
     db.create_all()
 
+@app.route('/api/test')
+def test():
+    return {"message": "API is running"}, 200
+
 if __name__ == '__main__':
     app.run(debug=True)
