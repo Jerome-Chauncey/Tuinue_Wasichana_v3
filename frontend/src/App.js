@@ -63,28 +63,30 @@ function App() {
     window.location.href = "/";
   };
 
-  useEffect(() => {
-    const verifyToken = async () => {
-      if (auth.token) {
-        try {
-          const response = await axios.get(`${API_URL}/api/verify-token`, {
-            headers: {
-              Authorization: `Bearer ${auth.token}`,
-              "Content-Type": "application/json",
-            },
-          });
+  // In your App.js, update the verifyToken function in the useEffect:
+useEffect(() => {
+  const verifyToken = async () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const response = await axios.get(`${API_URL}/api/verify-token`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-          if (!response.data.valid) {
-            throw new Error(response.data.message || "Invalid token");
-          }
-        } catch (err) {
-          toast.error(err.message || "Session expired, please log in again");
-          updateAuth(null, null, null, null);
+        if (!response.data.valid) {
+          throw new Error(response.data.message || "Invalid token");
         }
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Session expired, please log in again");
+        updateAuth(null, null, null, null);
       }
-    };
-    verifyToken();
-  }, [auth.token]);
+    }
+  };
+
+  verifyToken();
+}, []);  
 
   return (
     <AuthContext.Provider value={{ auth, updateAuth }}>

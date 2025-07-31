@@ -7,50 +7,47 @@ import { AuthContext } from "../App";
 const API_URL = "https://tuinue-wasichana-v3.onrender.com";
 
 function ProtectedRoute({ children, allowedRole }) {
-  const { auth } = useContext(AuthContext);
-  const [isValidating, setIsValidating] = useState(false);
+  const { auth, updateAuth } = useContext(AuthContext);
+  const [isValidating, setIsValidating] = useState(true);
   const [isValid, setIsValid] = useState(null);
 
   useEffect(() => {
     const validateToken = async () => {
-      if (auth.token) {
-        setIsValidating(true);
-        try {
-          const response = await axios.get(`${API_URL}/api/verify-token`, {
-            headers: {
-              Authorization: `Bearer ${auth.token}`,
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (response.data.valid) {
-            setIsValid(true);
-          } else {
-            throw new Error(response.data.message || "Invalid token");
-          }
-        } catch (err) {
-          setIsValid(false);
-          toast.error(err.message || "Session expired. Please log in again.");
-          localStorage.removeItem("token");
-          localStorage.removeItem("role");
-          localStorage.removeItem("userId");
-          localStorage.removeItem("charityId");
-        } finally {
-          setIsValidating(false);
-        }
-      } else {
+      if (!auth.token) {
         setIsValid(false);
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_URL}/api/verify-token`, {
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        });
+
+        if (response.data.valid) {
+          setIsValid(true);
+        } else {
+          throw new Error(response.data.message || "Invalid token");
+        }
+      } catch (err) {
+        setIsValid(false);
+        toast.error(err.response?.data?.message || "Session expired. Please log in again.");
+        updateAuth(null, null, null, null);
+      } finally {
+        setIsValidating(false);
       }
     };
+
     validateToken();
-  }, [auth.token]);
+  }, [auth.token, updateAuth]);
 
   if (isValidating) {
     return <div className="container mt-5">Loading...</div>;
   }
 
   if (!auth.token || isValid === false) {
-    toast.warn("Please log in to access this page.", { position: "top-right" });
     return <Navigate to="/auth" />;
   }
 
@@ -58,11 +55,9 @@ function ProtectedRoute({ children, allowedRole }) {
     toast.warn(`Access denied. You are not a ${allowedRole}.`, {
       position: "top-right",
     });
-    // Role-based redirects
-    if (auth.role === "donor") return <Navigate to="/donor" />;
-    if (auth.role === "charity") return <Navigate to="/charity" />;
-    if (auth.role === "admin") return <Navigate to="/admin" />;
-    return <Navigate to="/" />;
+    return <Navigate to={auth.role === "donor" ? "/donor" : 
+                        auth.role === "charity" ? "/charity" : 
+                        auth.role === "admin" ? "/admin" : "/"} />;
   }
 
   return children;
