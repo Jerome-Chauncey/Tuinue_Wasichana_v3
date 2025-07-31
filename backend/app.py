@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 app.config.from_object(Config)
 
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": "https://tuinue-wasichana-v3-1.onrender.com"}}, supports_credentials=True)
 
 db.init_app(app)
 jwt.init_app(app)

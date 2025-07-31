@@ -6,5 +6,5 @@ gunicorn
 bcrypt
 setuptools>=70.0.0
 wheel
-Flask-Cors
+flask-cors
 python-dotenv
