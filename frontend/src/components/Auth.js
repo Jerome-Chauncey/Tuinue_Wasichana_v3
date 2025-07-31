@@ -1,49 +1,49 @@
-import React, { useState, useContext } from 'react';
-import axios from 'axios';
-import { Container, Form, Button, Alert, Card, Modal } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { AuthContext } from '../App';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useContext } from "react";
+import axios from "axios";
+import { Container, Form, Button, Alert, Card, Modal } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { AuthContext } from "../App";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "react-toastify/dist/ReactToastify.css";
 
-const API_URL = 'https://tuinue-wasichana-v3.onrender.com';
+const API_URL = "https://tuinue-wasichana-v3.onrender.com";
 
 const Auth = () => {
   const { updateAuth } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    role: 'donor',
+    username: "",
+    email: "",
+    password: "",
+    role: "donor",
     charity: {
-      name: '',
-      description: '',
-      mission_statement: '',
-      location: '',
-      founded_year: '',
-      impact_metrics: '',
-      contact_person: '',
-      contact_phone: '',
-      website: '',
-      photo_url: ''
-    }
+      name: "",
+      description: "",
+      mission_statement: "",
+      location: "",
+      founded_year: "",
+      impact_metrics: "",
+      contact_person: "",
+      contact_phone: "",
+      website: "",
+      photo_url: "",
+    },
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showReset, setShowReset] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetMessage, setResetMessage] = useState('');
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.startsWith('charity.')) {
-      const field = name.split('.')[1];
+    if (name.startsWith("charity.")) {
+      const field = name.split(".")[1];
       setFormData({
         ...formData,
-        charity: { ...formData.charity, [field]: value }
+        charity: { ...formData.charity, [field]: value },
       });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -52,41 +52,123 @@ const Auth = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     toast.dismiss();
+
+    // Client-side validation
+    if (!isLogin && formData.role === "charity") {
+      const requiredCharityFields = [
+        "name",
+        "description",
+        "mission_statement",
+        "location",
+      ];
+      const missingFields = requiredCharityFields.filter(
+        (field) => !formData.charity[field]
+      );
+
+      if (missingFields.length > 0) {
+        setError(
+          `Missing required charity fields: ${missingFields.join(", ")}`
+        );
+        toast.error("Please fill all required charity information", {
+          position: "top-right",
+          toastId: "validation-error",
+          autoClose: 5000,
+        });
+        return;
+      }
+    }
 
     try {
       const payload = { ...formData };
-      if (formData.role !== 'charity') {
+      if (formData.role !== "charity") {
         delete payload.charity;
       }
-      const response = await axios.post(`${API_URL}/api/${isLogin ? 'login' : 'register'}`, payload);
-      
+
+      // Log the payload for debugging
+      console.log("Sending payload:", payload);
+
+      const response = await axios.post(
+        `${API_URL}/api/${isLogin ? "login" : "register"}`,
+        payload,
+        {
+          validateStatus: function (status) {
+            return status < 500; // Reject only if status is 500 or higher
+          },
+        }
+      );
+
+      if (response.status >= 400) {
+        const message =
+          response.data?.message ||
+          response.data?.error ||
+          (isLogin ? "Login failed" : "Registration failed");
+        throw new Error(message);
+      }
+
       if (isLogin) {
-        updateAuth(response.data.access_token, response.data.role, response.data.user_id, response.data.charity_id || null);
-        toast.success('Logged in successfully', { position: 'top-right', toastId: 'login-success', autoClose: 5000 });
-        navigate(response.data.role === 'donor' ? '/donor' : response.data.role === 'charity' ? '/charity' : '/admin');
+        updateAuth(
+          response.data.access_token,
+          response.data.role,
+          response.data.user_id,
+          response.data.charity_id || null
+        );
+        toast.success("Logged in successfully", {
+          position: "top-right",
+          toastId: "login-success",
+          autoClose: 5000,
+        });
+        navigate(
+          response.data.role === "donor"
+            ? "/donor"
+            : response.data.role === "charity"
+            ? "/charity"
+            : "/admin"
+        );
       } else {
-        if (formData.role === 'charity') {
-          toast.success('Charity registered, pending approval', { position: 'top-right', toastId: 'register-success', autoClose: 5000 });
+        if (formData.role === "charity") {
+          toast.success("Charity registered, pending approval", {
+            position: "top-right",
+            toastId: "register-success",
+            autoClose: 5000,
+          });
           setIsLogin(true);
         } else {
-          updateAuth(response.data.access_token, response.data.role, response.data.user_id, null);
-          toast.success('Registered successfully', { position: 'top-right', toastId: 'register-success', autoClose: 5000 });
-          navigate(response.data.role === 'donor' ? '/donor' : '/admin');
+          updateAuth(
+            response.data.access_token,
+            response.data.role,
+            response.data.user_id,
+            null
+          );
+          toast.success("Registered successfully", {
+            position: "top-right",
+            toastId: "register-success",
+            autoClose: 5000,
+          });
+          navigate(response.data.role === "donor" ? "/donor" : "/admin");
         }
       }
     } catch (err) {
-      const message = err.response?.data?.message || (isLogin ? 'Failed to login' : 'Failed to register');
+      console.error("Auth error:", err);
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        (isLogin ? "Failed to login" : "Failed to register");
       setError(message);
-      toast.error(message, { position: 'top-right', toastId: 'auth-error', autoClose: 5000 });
+      toast.error(message, {
+        position: "top-right",
+        toastId: "auth-error",
+        autoClose: 5000,
+      });
     }
   };
 
   return (
     <Container className="mt-4">
       <Card>
-        <Card.Header>{isLogin ? 'Login' : 'Register'}</Card.Header>
+        <Card.Header>{isLogin ? "Login" : "Register"}</Card.Header>
         <Card.Body>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
@@ -125,13 +207,17 @@ const Auth = () => {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Role</Form.Label>
-              <Form.Select name="role" value={formData.role} onChange={handleChange}>
+              <Form.Select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+              >
                 <option value="donor">Donor</option>
                 <option value="charity">Charity</option>
                 <option value="admin">Admin</option>
               </Form.Select>
             </Form.Group>
-            {!isLogin && formData.role === 'charity' && (
+            {!isLogin && formData.role === "charity" && (
               <>
                 <Form.Group className="mb-3">
                   <Form.Label>Charity Name</Form.Label>
@@ -240,20 +326,20 @@ const Auth = () => {
               </>
             )}
             <Button variant="primary" type="submit">
-              {isLogin ? 'Login' : 'Register'}
+              {isLogin ? "Login" : "Register"}
             </Button>
             <Button
               variant="link"
               onClick={() => setIsLogin(!isLogin)}
               className="ms-2"
             >
-              {isLogin ? 'Need to register?' : 'Already have an account?'}
+              {isLogin ? "Need to register?" : "Already have an account?"}
             </Button>
             {isLogin && (
               <Button
                 variant="link"
                 className="ms-2"
-                style={{ fontSize: '0.9em' }}
+                style={{ fontSize: "0.9em" }}
                 onClick={() => setShowReset(true)}
               >
                 Forgot password?
@@ -272,12 +358,16 @@ const Auth = () => {
             onSubmit={async (e) => {
               e.preventDefault();
               setResetLoading(true);
-              setResetMessage('');
+              setResetMessage("");
               try {
-                await axios.post(`${API_URL}/api/password-reset/request`, { email: resetEmail });
-                setResetMessage('If that email exists, a reset link will be sent.');
+                await axios.post(`${API_URL}/api/password-reset/request`, {
+                  email: resetEmail,
+                });
+                setResetMessage(
+                  "If that email exists, a reset link will be sent."
+                );
               } catch (err) {
-                setResetMessage('Error sending reset email.');
+                setResetMessage("Error sending reset email.");
               }
               setResetLoading(false);
             }}
@@ -287,13 +377,13 @@ const Auth = () => {
               <Form.Control
                 type="email"
                 value={resetEmail}
-                onChange={e => setResetEmail(e.target.value)}
+                onChange={(e) => setResetEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
               />
             </Form.Group>
             <Button type="submit" className="mt-3" disabled={resetLoading}>
-              {resetLoading ? 'Sending...' : 'Send Reset Link'}
+              {resetLoading ? "Sending..." : "Send Reset Link"}
             </Button>
             {resetMessage && <div className="mt-2">{resetMessage}</div>}
           </Form>
