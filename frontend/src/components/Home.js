@@ -135,7 +135,7 @@ const Home = () => {
             >
               <div style={{ marginTop: "0", marginBottom: "150px" }}>
                 <h2>BREAKING BARRIERS, BUILDING DREAMS</h2>
-                <p className="">
+                <p className="fs-16">
                   By providing sustainable menstrual solutions and education, we
                   ensure girls stay in school every day, unlocking their
                   potential.
