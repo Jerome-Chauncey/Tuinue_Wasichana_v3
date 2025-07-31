@@ -17,6 +17,8 @@ def register():
         return jsonify({'message': 'Invalid email format'}), 400
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'message': 'Email already exists'}), 400
+    if User.query.filter_by(username=data['username']).first():
+        return jsonify({'message': 'Username already exists, please choose a different one'}), 400
     hashed_password = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     user = User(
         username=data['username'],
@@ -47,8 +49,21 @@ def register():
             )
             db.session.add(charity)
             db.session.commit()
-            return jsonify({'message': 'Charity registered, pending approval'}), 201
-        access_token = create_access_token(identity=str(user.id))
+            # Set charity_id for charity role
+            additional_claims = {
+                'role': user.role,
+                'user_id': str(user.id),
+                'charity_id': charity.id
+            }
+            access_token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
+            return jsonify({'access_token': access_token, 'role': user.role, 'user_id': user.id, 'charity_id': charity.id}), 201
+        # For non-charity roles (e.g., admin, donor)
+        additional_claims = {
+            'role': user.role,
+            'user_id': str(user.id),
+            'charity_id': None
+        }
+        access_token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
         return jsonify({'access_token': access_token, 'role': user.role, 'user_id': user.id}), 201
     except Exception as e:
         db.session.rollback()
