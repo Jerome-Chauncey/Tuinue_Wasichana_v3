@@ -7,17 +7,18 @@ import bcrypt
 
 reset_bp = Blueprint("reset_password", __name__)
 
-@reset_bp.route("/api/password-reset/request", methods=["POST"])
+@reset_bp.route("/request", methods=["POST"])
 def request_password_reset():
     data = request.get_json()
     email = data.get("email")
     user = User.query.filter_by(email=email).first()
     # Always return the same message for security
     if user:
-        send_password_reset_email(user.email)
+        reset_token = generate_reset_token(user.email)
+        send_password_reset_email(user.email, reset_token)
     return jsonify({"message": "If that email exists, a reset link will be sent."}), 200
 
-@reset_bp.route("/api/password-reset/confirm/<token>", methods=["POST"])
+@reset_bp.route("/confirm/<token>", methods=["POST"])
 def reset_password(token):
     data = request.get_json()
     new_password = data.get("password")

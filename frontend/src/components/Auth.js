@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
-import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
+import { Container, Form, Button, Alert, Card, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AuthContext } from '../App';
@@ -32,6 +32,10 @@ const Auth = () => {
     }
   });
   const [error, setError] = useState('');
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -245,9 +249,56 @@ const Auth = () => {
             >
               {isLogin ? 'Need to register?' : 'Already have an account?'}
             </Button>
+            {isLogin && (
+              <Button
+                variant="link"
+                className="ms-2"
+                style={{ fontSize: '0.9em' }}
+                onClick={() => setShowReset(true)}
+              >
+                Forgot password?
+              </Button>
+            )}
           </Form>
         </Card.Body>
       </Card>
+      {/* Password Reset Modal */}
+      <Modal show={showReset} onHide={() => setShowReset(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Reset Password</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setResetLoading(true);
+              setResetMessage('');
+              try {
+                await axios.post(`${API_URL}/password-reset/request`, { email: resetEmail });
+                setResetMessage('If that email exists, a reset link will be sent.');
+              } catch (err) {
+                setResetMessage('Error sending reset email.');
+              }
+              setResetLoading(false);
+            }}
+          >
+            <Form.Group>
+              <Form.Label>Email address</Form.Label>
+              <Form.Control
+                type="email"
+                value={resetEmail}
+                onChange={e => setResetEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+              />
+            </Form.Group>
+            <Button type="submit" className="mt-3" disabled={resetLoading}>
+              {resetLoading ? 'Sending...' : 'Send Reset Link'}
+            </Button>
+            {resetMessage && <div className="mt-2">{resetMessage}</div>}
+          </Form>
+        </Modal.Body>
+      </Modal>
     </Container>
   );
 };
