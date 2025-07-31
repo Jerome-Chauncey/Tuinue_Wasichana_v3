@@ -109,7 +109,7 @@ const CharityDashboard = () => {
     }
     try {
       const response = await axios.put(
-        `${API_URL}/stories/${editStory.id}`,
+        `${API_URL}/api/stories/${editStory.id}`,
         editStory,
         { headers: { Authorization: `Bearer ${auth.token}` } }
       );
