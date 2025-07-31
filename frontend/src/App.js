@@ -23,13 +23,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import CharityList from "./components/CharityList";
 import PurchaseCredits from "./components/PurchaseCredits";
 import "./styles.css";
-import axios from 'axios';
-
+import axios from "axios";
 
 export const AuthContext = createContext();
 
-const API_URL = 'https://tuinue-wasichana-v3.onrender.com';
-
+const API_URL = "https://tuinue-wasichana-v3.onrender.com";
 
 function App() {
   const [auth, setAuth] = useState({
@@ -77,10 +75,10 @@ function App() {
           });
 
           if (!response.data.valid) {
-            throw new Error("Invalid token");
+            throw new Error(response.data.message || "Invalid token");
           }
         } catch (err) {
-          toast.error("Session expired, please log in again");
+          toast.error(err.message || "Session expired, please log in again");
           updateAuth(null, null, null, null);
         }
       }

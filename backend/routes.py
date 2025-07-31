@@ -75,17 +75,23 @@ def login():
 @api.route('/verify-token', methods=['GET'])
 @jwt_required()
 def verify_token():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"valid": False, "message": "User not found"}), 200
-    
-    return jsonify({
-        "valid": True,
-        "role": user.role,
-        "user_id": user.id,
-        "charity_id": user.charity[0].id if user.role == 'charity' else None
-    }), 200
+    try:
+        user_id = get_jwt_identity()
+        if not user_id:
+            return jsonify({"valid": False, "message": "Invalid token"}), 200
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"valid": False, "message": "User not found"}), 200
+        
+        return jsonify({
+            "valid": True,
+            "role": user.role,
+            "user_id": user.id,
+            "charity_id": user.charity[0].id if user.role == 'charity' and user.charity else None
+        }), 200
+    except Exception as e:
+        return jsonify({"valid": False, "message": str(e)}), 200
 
 @api.route('/admin-overview', methods=['GET'])
 @jwt_required()
@@ -419,41 +425,63 @@ def charity_donations():
 @api.route('/donor/credits', methods=['GET'])
 @jwt_required()
 def donor_credits():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    if not user or user.role != 'donor':
-        return jsonify({'message': 'Access denied'}), 403
-    return jsonify({'credits': user.credits})
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user or user.role != 'donor':
+            return jsonify({'message': 'Access denied'}), 403
+        
+        return jsonify({
+            'credits': user.credits,
+            'user_id': user.id,
+            'username': user.username
+        }), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 400
 
 @api.route('/donor/credit-history', methods=['GET'])
 @jwt_required()
 def donor_credit_history():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    if not user or user.role != 'donor':
-        return jsonify({'message': 'Access denied'}), 403
-    transactions = CreditTransaction.query.filter_by(user_id=user_id).all()
-    return jsonify([{
-        'id': t.id,
-        'amount': t.amount,
-        'date': t.date.isoformat()
-    } for t in transactions])
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user or user.role != 'donor':
+            return jsonify({'message': 'Access denied'}), 403
+        
+        transactions = CreditTransaction.query.filter_by(user_id=user_id).all()
+        return jsonify([{
+            'id': t.id,
+            'amount': t.amount,
+            'date': t.date.isoformat(),
+            'user_id': user_id
+        } for t in transactions]), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 400
 
 @api.route('/donor/history', methods=['GET'])
 @jwt_required()
 def donor_history():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    if not user or user.role != 'donor':
-        return jsonify({'message': 'Access denied'}), 403
-    donations = Donation.query.filter_by(donor_id=user_id).all()
-    return jsonify([{
-        'id': d.id,
-        'charity_name': Charity.query.get(d.charity_id).name,
-        'amount': d.amount,
-        'date': d.date.isoformat(),
-        'is_anonymous': d.is_anonymous
-    } for d in donations])
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user or user.role != 'donor':
+            return jsonify({'message': 'Access denied'}), 403
+        
+        donations = Donation.query.filter_by(donor_id=user_id).all()
+        return jsonify([{
+            'id': d.id,
+            'charity_id': d.charity_id,
+            'charity_name': Charity.query.get(d.charity_id).name,
+            'amount': d.amount,
+            'date': d.date.isoformat(),
+            'is_anonymous': d.is_anonymous,
+            'user_id': user_id
+        } for d in donations]), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 400
 
 @api.route('/donor/donate', methods=['POST'])
 @jwt_required()

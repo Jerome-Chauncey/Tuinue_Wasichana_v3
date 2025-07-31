@@ -31,56 +31,30 @@ const DonorDashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [
-          creditsResponse,
-          creditHistoryResponse,
-          donationHistoryResponse,
-          charitiesResponse,
-        ] = await Promise.all([
-          axios.get(`${API_URL}/api/donor/credits`, {
-            headers: {
-              Authorization: `Bearer ${auth.token}`,
-              "Content-Type": "application/json",
-            },
-          }),
-          axios.get(`${API_URL}/api/donor/credit-history`, {
-            headers: {
-              Authorization: `Bearer ${auth.token}`,
-              "Content-Type": "application/json",
-            },
-          }),
-          axios.get(`${API_URL}/api/donor/history`, {
-            headers: {
-              Authorization: `Bearer ${auth.token}`,
-              "Content-Type": "application/json",
-            },
-          }),
-          axios.get(`${API_URL}/api/charities`, {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }),
-        ]);
-
-        // Handle responses
-        setCredits(creditsResponse.data.credits || 0);
-        setCreditHistory(creditHistoryResponse.data || []);
-        setDonationHistory(donationHistoryResponse.data || []);
-        setCharities(charitiesResponse.data || []);
-      } catch (error) {
-        if (error.response?.status === 422) {
-          const errorData = error.response.data;
-          console.error("Validation errors:", errorData);
-          toast.error("Invalid request data");
-        } else {
-          const message =
-            error.response?.data?.message || "Failed to fetch donor data";
-          setError(message);
-          toast.error(message);
-        }
+  try {
+    const config = {
+      headers: { 
+        Authorization: `Bearer ${auth.token}`,
+        'Content-Type': 'application/json'
       }
     };
+
+    const [creditsResponse, creditHistoryResponse, donationHistoryResponse, charitiesResponse] = await Promise.all([
+      axios.get(`${API_URL}/api/donor/credits`, config),
+      axios.get(`${API_URL}/api/donor/credit-history`, config),
+      axios.get(`${API_URL}/api/donor/history`, config),
+      axios.get(`${API_URL}/api/charities`)
+    ]);
+
+    setCredits(creditsResponse.data.credits || 0);
+    setCreditHistory(creditHistoryResponse.data || []);
+    setDonationHistory(donationHistoryResponse.data || []);
+    setCharities(charitiesResponse.data || []);
+  } catch (error) {
+    console.error("API Error:", error.response?.data || error.message);
+    toast.error(error.response?.data?.message || 'Failed to fetch data');
+  }
+};
     fetchData();
   }, [auth.token, auth.role]);
 

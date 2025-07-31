@@ -26,11 +26,11 @@ function ProtectedRoute({ children, allowedRole }) {
           if (response.data.valid) {
             setIsValid(true);
           } else {
-            throw new Error("Invalid token");
+            throw new Error(response.data.message || "Invalid token");
           }
         } catch (err) {
           setIsValid(false);
-          toast.error("Session expired. Please log in again.");
+          toast.error(err.message || "Session expired. Please log in again.");
           localStorage.removeItem("token");
           localStorage.removeItem("role");
           localStorage.removeItem("userId");
