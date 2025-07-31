@@ -75,15 +75,15 @@ def login():
         if not charity.approved:
             return jsonify({'message': 'Charity application pending approval'}), 403
     
-    # Create token with proper claims
+    # Create token with consistent identity and claims
     additional_claims = {
         'role': user.role,
-        'user_id': user.id,
+        'user_id': str(user.id),  # Match the identity type
         'charity_id': charity.id if (user.role == 'charity' and charity) else None
     }
     
     access_token = create_access_token(
-        identity=str(user.id),
+        identity=str(user.id),  # Identity is the user ID as string
         additional_claims=additional_claims
     )
     
@@ -110,14 +110,20 @@ def verify_token():
             return jsonify({"valid": False, "message": "User not found"}), 404
         
         # Verify token claims
-        if claims.get('role') != user.role or str(claims.get('user_id')) != str(user.id):
+        if claims.get('role') != user.role or claims.get('user_id') != str(user.id):
             return jsonify({"valid": False, "message": "Token claims mismatch"}), 401
+        
+        # Fetch charity_id if applicable
+        charity_id = None
+        if user.role == 'charity':
+            charity = Charity.query.filter_by(user_id=user.id).first()
+            charity_id = charity.id if charity else None
         
         return jsonify({
             "valid": True,
             "role": user.role,
             "user_id": user.id,
-            "charity_id": Charity.query.filter_by(user_id=user.id).first().id if user.role == 'charity' and Charity.query.filter_by(user_id=user.id).first() else None
+            "charity_id": charity_id
         }), 200
     except Exception as e:
         return jsonify({"valid": False, "message": str(e)}), 401
