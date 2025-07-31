@@ -23,9 +23,9 @@ const AdminDashboard = () => {
       setError('');
       try {
         const [charitiesRes, donorsRes, overviewRes] = await Promise.all([
-          axios.get(`${API_URL}/admin/charities`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}/admin/donors`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}/admin-overview`, { headers: { Authorization: `Bearer ${token}` } })
+          axios.get(`${API_URL}api/admin/charities`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}api/admin/donors`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}api/admin-overview`, { headers: { Authorization: `Bearer ${token}` } })
         ]);
         setCharities(charitiesRes.data);
         setDonors(donorsRes.data);

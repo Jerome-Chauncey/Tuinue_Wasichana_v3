@@ -33,16 +33,16 @@ const DonorDashboard = () => {
       }
       try {
         const [creditsResponse, creditHistoryResponse, donationHistoryResponse, charitiesResponse] = await Promise.all([
-          axios.get(`${API_URL}/donor/credits`, {
+          axios.get(`${API_URL}api/donor/credits`, {
             headers: { Authorization: `Bearer ${auth.token}` }
           }).catch(err => ({ error: err })),
-          axios.get(`${API_URL}/donor/credit-history`, {
+          axios.get(`${API_URL}api/donor/credit-history`, {
             headers: { Authorization: `Bearer ${auth.token}` }
           }).catch(err => ({ error: err })),
-          axios.get(`${API_URL}/donor/history`, {
+          axios.get(`${API_URL}api/donor/history`, {
             headers: { Authorization: `Bearer ${auth.token}` }
           }).catch(err => ({ error: err })),
-          axios.get(`${API_URL}/charities`).catch(err => ({ error: err }))
+          axios.get(`${API_URL}api/charities`).catch(err => ({ error: err }))
         ]);
 
         if (creditsResponse.error) {

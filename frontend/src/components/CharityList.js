@@ -12,7 +12,7 @@ const CharityList = () => {
   useEffect(() => {
     const fetchCharities = async () => {
       try {
-        const response = await axios.get(`${API_URL}/charities`);
+        const response = await axios.get(`${API_URL}api/charities`);
         setCharities(response.data);
       } catch (err) {
         console.error("Failed to fetch charities:", err);
