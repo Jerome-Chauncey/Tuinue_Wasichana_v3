@@ -25,30 +25,34 @@ def register():
         role=data['role'],
         credits=0
     )
-    db.session.add(user)
-    db.session.commit()
-    if data['role'] == 'charity':
-        charity_data = data.get('charity', {})
-        charity = Charity(
-            user_id=user.id,
-            name=charity_data.get('name', ''),
-            description=charity_data.get('description', ''),
-            mission_statement=charity_data.get('mission_statement', ''),
-            location=charity_data.get('location', ''),
-            founded_year=charity_data.get('founded_year', 0),
-            impact_metrics=charity_data.get('impact_metrics', ''),
-            contact_person=charity_data.get('contact_person', ''),
-            contact_phone=charity_data.get('contact_phone', ''),
-            website=charity_data.get('website', ''),
-            photo_url=charity_data.get('photo_url', ''),
-            approved=False,
-            rejected=False
-        )
-        db.session.add(charity)
+    try:
+        db.session.add(user)
         db.session.commit()
-        return jsonify({'message': 'Charity registered, pending approval'}), 201
-    access_token = create_access_token(identity=user.id)
-    return jsonify({'access_token': access_token, 'role': user.role, 'user_id': user.id}), 201
+        if data['role'] == 'charity':
+            charity_data = data.get('charity', {})
+            charity = Charity(
+                user_id=user.id,
+                name=charity_data.get('name', ''),
+                description=charity_data.get('description', ''),
+                mission_statement=charity_data.get('mission_statement', ''),
+                location=charity_data.get('location', ''),
+                founded_year=charity_data.get('founded_year', 0),
+                impact_metrics=charity_data.get('impact_metrics', ''),
+                contact_person=charity_data.get('contact_person', ''),
+                contact_phone=charity_data.get('contact_phone', ''),
+                website=charity_data.get('website', ''),
+                photo_url=charity_data.get('photo_url', ''),
+                approved=False,
+                rejected=False
+            )
+            db.session.add(charity)
+            db.session.commit()
+            return jsonify({'message': 'Charity registered, pending approval'}), 201
+        access_token = create_access_token(identity=str(user.id))
+        return jsonify({'access_token': access_token, 'role': user.role, 'user_id': user.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Registration failed: {str(e)}'}), 500
 
 @api.route('/login', methods=['POST'])
 def login():
@@ -94,17 +98,18 @@ def login():
 @jwt_required()
 def verify_token():
     try:
-        current_user = get_jwt_identity()
+        current_user = get_jwt_identity()  # Returns string from create_access_token
         claims = get_jwt()
         
         if not current_user:
             return jsonify({"valid": False, "message": "Invalid token"}), 401
         
-        user = User.query.get(current_user)
+        # Convert current_user to int for query
+        user = User.query.get(int(current_user))  # Ensure integer conversion
         if not user:
             return jsonify({"valid": False, "message": "User not found"}), 404
         
-        # Verify token claims match user data
+        # Verify token claims
         if claims.get('role') != user.role or str(claims.get('user_id')) != str(user.id):
             return jsonify({"valid": False, "message": "Token claims mismatch"}), 401
         
@@ -112,9 +117,8 @@ def verify_token():
             "valid": True,
             "role": user.role,
             "user_id": user.id,
-            "charity_id": user.charity[0].id if user.role == 'charity' and user.charity else None
+            "charity_id": Charity.query.filter_by(user_id=user.id).first().id if user.role == 'charity' and Charity.query.filter_by(user_id=user.id).first() else None
         }), 200
-        
     except Exception as e:
         return jsonify({"valid": False, "message": str(e)}), 401
 
