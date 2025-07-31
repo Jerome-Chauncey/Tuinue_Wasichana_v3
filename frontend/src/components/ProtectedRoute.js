@@ -16,7 +16,7 @@ function ProtectedRoute({ children, allowedRole }) {
       if (auth.token) {
         setIsValidating(true);
         try {
-          await axios.get(`${API_URL}api/verify-token`, {
+          await axios.get(`${API_URL}/api/verify-token`, {
             headers: { Authorization: `Bearer ${auth.token}` }
           });
           setIsValid(true);

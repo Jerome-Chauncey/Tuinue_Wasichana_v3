@@ -20,8 +20,8 @@ const Home = () => {
       setError("");
       try {
         const [charitiesResponse, storiesResponse] = await Promise.all([
-          axios.get(`${API_URL}api/charities`).catch((err) => ({ error: err })),
-          axios.get(`${API_URL}api/stories`).catch((err) => ({ error: err })),
+          axios.get(`${API_URL}/api/charities`).catch((err) => ({ error: err })),
+          axios.get(`${API_URL}/api/stories`).catch((err) => ({ error: err })),
         ]);
 
         if (charitiesResponse.error) {

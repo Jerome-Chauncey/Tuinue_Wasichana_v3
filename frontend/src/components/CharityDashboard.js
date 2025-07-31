@@ -29,13 +29,13 @@ const CharityDashboard = () => {
       }
       try {
         const [statusResponse, donationsResponse, storiesResponse] = await Promise.all([
-          axios.get(`${API_URL}api/charity/status`, {
+          axios.get(`${API_URL}/api/charity/status`, {
             headers: { Authorization: `Bearer ${auth.token}` }
           }),
-          axios.get(`${API_URL}api/charity/donations`, {
+          axios.get(`${API_URL}/api/charity/donations`, {
             headers: { Authorization: `Bearer ${auth.token}` }
           }),
-          axios.get(`${API_URL}api/stories?charity_id=${auth.charityId}`, {
+          axios.get(`${API_URL}/api/stories?charity_id=${auth.charityId}`, {
             headers: { Authorization: `Bearer ${auth.token}` }
           }).catch(err => {
             if (err.response?.status === 404) {
