@@ -8,7 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../styles.css";
 import impact from "../assets/impact-image.jpg";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://tuinue-wasichana-v3.onrender.com";
 
 const Home = () => {
   const [charities, setCharities] = useState([]);
