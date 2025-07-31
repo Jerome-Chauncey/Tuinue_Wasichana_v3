@@ -4,7 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { AuthContext } from '../App';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://tuinue-wasichana-v3.onrender.com';
 
 function ProtectedRoute({ children, allowedRole }) {
   const { auth } = useContext(AuthContext);

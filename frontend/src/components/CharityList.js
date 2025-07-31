@@ -4,7 +4,7 @@ import { Container, Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://tuinue-wasichana-v3.onrender.com";
 
 const CharityList = () => {
   const [charities, setCharities] = useState([]);

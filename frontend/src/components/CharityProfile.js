@@ -4,7 +4,7 @@ import { Container, Card, ListGroup } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://tuinue-wasichana-v3.onrender.com';
 
 const CharityProfile = () => {
   const { id } = useParams();

@@ -65,7 +65,7 @@ function App() {
       if (auth.token) {
         try {
           const response = await fetch(
-            "http://localhost:5000/api/verify-token",
+            "https://tuinue-wasichana-v3.onrender.com/verify-token",
             {
               headers: { Authorization: `Bearer ${auth.token}` },
             }

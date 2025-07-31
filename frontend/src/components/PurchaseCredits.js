@@ -6,7 +6,7 @@ import { AuthContext } from '../App';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://tuinue-wasichana-v3.onrender.com';
 
 const PurchaseCredits = () => {
   const { auth } = useContext(AuthContext);

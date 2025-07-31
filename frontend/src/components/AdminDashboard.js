@@ -9,7 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://tuinue-wasichana-v3.onrender.com';
 
 const AdminDashboard = () => {
   const [charities, setCharities] = useState([]);
