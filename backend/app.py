@@ -4,20 +4,40 @@ from extensions import db, jwt
 from routes import api
 from config import Config
 from reset_routes import reset_bp
+import os
 
 app = Flask(__name__)
-
 app.config.from_object(Config)
+
+allowed_origins = [
+    "https://tuinue-wasichana-v3-1.onrender.com",
+    "https://tuinue-wasichana-v3.onrender.com"
+]
+
+if os.environ.get('FLASK_ENV') == 'development':
+    allowed_origins.extend([
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ])
 
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["https://tuinue-wasichana-v3-1.onrender.com"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"],
-        "supports_credentials": True
+        "origins": allowed_origins,
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        "allow_headers": [
+            "Content-Type", 
+            "Authorization",
+            "X-Requested-With",
+            "Accept"
+        ],
+        "expose_headers": [
+            "Content-Disposition",
+            "X-Total-Count"
+        ],
+        "supports_credentials": True,
+        "max_age": 86400  
     }
 })
-
 
 db.init_app(app)
 jwt.init_app(app)
