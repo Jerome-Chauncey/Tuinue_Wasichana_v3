@@ -62,7 +62,7 @@ const CharityDashboard = () => {
       }
     };
     fetchData();
-  }, [auth.token, auth.role]);
+  }, [auth.token, auth.role, auth.charityId]);
 
   // Rest of the component (handleStoryChange, handleEditStoryChange, etc.) remains the same
   const handleStoryChange = (e) => {
