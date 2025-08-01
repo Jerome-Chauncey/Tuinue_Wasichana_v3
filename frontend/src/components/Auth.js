@@ -214,7 +214,7 @@ const Auth = () => {
               >
                 <option value="donor">Donor</option>
                 <option value="charity">Charity</option>
-                <option value="admin">Admin</option>
+                {/* <option value="admin">Admin</option> */}
               </Form.Select>
             </Form.Group>
             {!isLogin && formData.role === "charity" && (
